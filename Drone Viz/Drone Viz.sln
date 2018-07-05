@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2017
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Drone Viz", "Drone Viz.csproj", "{B96CB325-346F-BDD0-8A8F-CEBFBF486268}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Drone Viz.Editor", "Drone Viz.Editor.csproj", "{40494C0D-71C8-7588-5CF9-9A291277B7C9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Drone Viz.Editor", "Drone Viz.Editor.csproj", "{40494C0D-71C8-7588-5CF9-9A291277B7C9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B96CB325-346F-BDD0-8A8F-CEBFBF486268}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B96CB325-346F-BDD0-8A8F-CEBFBF486268}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B96CB325-346F-BDD0-8A8F-CEBFBF486268}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B96CB325-346F-BDD0-8A8F-CEBFBF486268}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40494C0D-71C8-7588-5CF9-9A291277B7C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40494C0D-71C8-7588-5CF9-9A291277B7C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40494C0D-71C8-7588-5CF9-9A291277B7C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40494C0D-71C8-7588-5CF9-9A291277B7C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40494C0D-71C8-7588-5CF9-9A291277B7C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40494C0D-71C8-7588-5CF9-9A291277B7C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40494C0D-71C8-7588-5CF9-9A291277B7C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40494C0D-71C8-7588-5CF9-9A291277B7C9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
