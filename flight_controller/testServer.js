@@ -1,5 +1,24 @@
 var net = require('net');
 
+var arDrone = require('ar-drone');
+var client  = arDrone.createClient();
+client.config('general:navdata_demo', 'FALSE');
+
+var count = 0;
+var accelerationData;
+
+var foo = function(yolo) {
+	if (count % 40 == 0) {
+		accelerationData = yolo.physMeasures
+	}
+	count++;
+}
+
+client.on('navdata', foo);
+
+// client.config('general:navdata_demo', 'FALSE');
+// client.on('navdata', console.log);
+
 var server = net.createServer(function(socket) {
 	socket.setEncoding('utf8')
 	
@@ -12,20 +31,27 @@ var server = net.createServer(function(socket) {
 		console.log("SERVER: " + data);
 		
 		var command = data.slice(0,2);
-		var amount = parseFloat(data.slice(3));
+		var direction = parseFloat(data.slice(2));
 		switch(command) {
 			case 'to': //takeoff
 				// do take off
 				console.log('SERVER: to received');
+
+				client.takeoff(function () {
+					console.log('SERVER: to finished');
+					socket.write(command + ":finished");
+				})
 				
-				console.log('SERVER: to finished');
-				socket.write(command + ":finished");
 				break;
 			case "la": //land
 				console.log('SERVER: la received');
+
+				client.stop();
+				client.land(function () {
+					console.log('SERVER: la finished');
+					socket.write(command + ":finished");
+				})
 				                     
-				console.log('SERVER: la finished');
-				socket.write(command + ":finished");
 				break;
 			case "up": // up
 				console.log('SERVER: up received');
@@ -35,12 +61,27 @@ var server = net.createServer(function(socket) {
 				break;
 			case "fo": // forward
 				console.log('SERVER: fo received');
+
+				console.log(direction)
+    			client
+	  				.after(1000, function() {
+	    			this.front(direction*0.1);
+	  			}).after(1000, function() {
+	  				this.stop();
+	  			})
 				
 				console.log('SERVER: fo finished');
 				socket.write(command + ":finished");
 				break;
 			case "rl": // rotate left
 				console.log('SERVER: rl received');
+
+				client
+	  				.after(1000, function() {
+	    			this.clockwise(direction*0.1);
+	  			}).after(1000, function() {
+	  				this.stop();
+	  			})
 				
 				console.log('SERVER: rl finished');
 				socket.write(command + ":finished");
@@ -49,17 +90,31 @@ var server = net.createServer(function(socket) {
 				console.log('SERVER: ra received');
 				
 				console.log('SERVER: ra finished');
-				socket.write(command + ":<all that sweet, sweet sensor data>");
+				socket.write(JSON.stringify(accelerationData));
 				break;
 			default:
 				console.log('SERVER: un recognized command');
 				socket.write("un recognized command");
 		}
 	});
+
+	socket.on('error', function (data) {
+		console.log("error: "  + data);
+	})
+
 	//socket.pipe(socket);
 });
 
 server.listen(1337, '127.0.0.1');
+
+process.on('SIGINT', function() {
+    console.log("Caught interrupt signal");
+    client.stop();
+    console.log("Stop");
+    client.land(function () {
+    	process.exit();
+    });
+});
 
 /*
 And connect with a tcp client from the command line using netcat, the *nix 
