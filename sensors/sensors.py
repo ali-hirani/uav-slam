@@ -6,7 +6,7 @@ import time
 import numpy as np
 import serial
 from rpisensors.eeprom16 import Eeprom16
-
+import atexit
 
 # pylint: disable=C0103
 
@@ -224,8 +224,14 @@ class TF_MINI_LIDAR():
 
 
     def __init__(self):
-        self.initial_config()
+
         self.ser = serial.Serial('/dev/ttyS0',115200,timeout = 1)
+        self.initial_config()
+        atexit.register(self.exit_handler)
+
+    def exit_handler(self):
+        self.ser.close()
+        print "Closed ttyS0"
 
     def initial_config(self):
         #From product spec manual, STANDARD MODE
@@ -244,10 +250,10 @@ class TF_MINI_LIDAR():
         header_2 = self.ser.read()
         header = b'Y'
         distance_total = 0
-        if header_1 == header and header_2 == header:
-            distance_l = ser.read()
-            distance_h = ser.read()
-            dist_total = ord(distance_h)*256 + ord(distance_l)
+        if header_1 == b'Y' and header_2 == b'Y':
+            distance_l = self.ser.read()
+            distance_h = self.ser.read()
+            distance_total = ord(distance_h)*256 + ord(distance_l)
 
         #skip strength data for now
         for i in range(0, 5):

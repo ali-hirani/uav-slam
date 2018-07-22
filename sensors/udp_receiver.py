@@ -35,7 +35,7 @@ def plot_data(x, y, y2):
 
 #inits
 udp_init("192.168.0.104")
-plot_setup("VL6180x Sensor Data")
+plot_setup("Sensor Data")
 i = 0 
 while True:
         i += 1
