@@ -1,7 +1,8 @@
 // /Users/ali/4A/FYDP/yolo
 
 var arDrone = require('ar-drone');
-var client  = arDrone.createClient();
+// var client  = arDrone.createClient();
+var client  = arDrone.createClient({ip:"10.42.0.8"});
 client.config('general:navdata_demo', 'FALSE');
 client.on('navdata', console.log);
 

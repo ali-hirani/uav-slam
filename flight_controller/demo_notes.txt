@@ -1,0 +1,18 @@
+1. Ashwin - Set up fydp-falaj
+2. Ashwin - Set up rpi for top sensor (sending data) to Ali's laptop IP (get from if config en0)
+3. Ali - Telnet to drone and run command to connect it to Wi-Fi
+
+telnet 192.168.1.1
+killall udhcpd; iwconfig ath0 mode managed essid "fydp-falaj"; ifconfig ath0 10.42.0.8 netmask 255.255.255.0 up;
+
+4. Ali - run node js server
+
+node testServer.js
+
+5. Ali - Change host laptop IP pythonSocketNode.py, then run python client script
+
+python pythonSocketNode.py
+
+6. Cover sensor to take off
+7. Stop covering sensor to land
+
