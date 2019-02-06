@@ -1,7 +1,10 @@
 var net = require('net');
 
 var arDrone = require('ar-drone');
-var client  = arDrone.createClient({ip:"10.42.0.8"});
+
+var client  = arDrone.createClient();
+// When we are telnetting
+// var client  = arDrone.createClient({ip:"10.42.0.8"});
 client.config('general:navdata_demo', 'FALSE');
 
 var count = 0;
@@ -65,8 +68,8 @@ var server = net.createServer(function(socket) {
 				console.log(direction)
     			client
 	  				.after(1000, function() {
-	    			this.front(direction*0.1);
-	  			}).after(1000, function() {
+	    			this.front(0.3);
+	  			}).after(1250, function() {
 	  				this.stop();
 	  			})
 				
@@ -78,8 +81,8 @@ var server = net.createServer(function(socket) {
 
 				client
 	  				.after(1000, function() {
-	    			this.clockwise(direction*0.1);
-	  			}).after(1000, function() {
+	    			this.clockwise(0.3);
+	  			}).after(1250, function() {
 	  				this.stop();
 	  			})
 				

@@ -13,7 +13,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
 
 def udp_init(ip):
     UDP_IP = ip
-    UDP_PORT = 5005
+    UDP_PORT = 2000
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind((UDP_IP,UDP_PORT))
 
