@@ -26,14 +26,17 @@ var server = net.createServer(function(socket) {
 	socket.setEncoding('utf8')
 	
 	// confrim to client that connection was succesful
-	socket.write('connection confirmation\n');
+	socket.write('connection confirmation');
 	console.log('SERVER: Connected');
 	
 	// handle incoming requests of format "up:2" - "<two char command>:<optional float quantity>"
 	socket.on('data', function (data) {
 		console.log("SERVER: " + data);
-		
-		var command = data.slice(0,2);
+	
+		var array = data.split(',');
+		var command = array[0]
+		var num = array[1]
+
 		var direction = parseFloat(data.slice(2));
 		switch(command) {
 			case 'to': //takeoff
@@ -42,7 +45,7 @@ var server = net.createServer(function(socket) {
 
 				client.takeoff(function () {
 					console.log('SERVER: to finished');
-					socket.write(command + ":finished");
+					socket.write(command + "," + num);
 				})
 				
 				break;
@@ -52,7 +55,7 @@ var server = net.createServer(function(socket) {
 				client.stop();
 				client.land(function () {
 					console.log('SERVER: la finished');
-					socket.write(command + ":finished");
+					socket.write(command + "," + num);
 				})
 				                     
 				break;
@@ -60,7 +63,7 @@ var server = net.createServer(function(socket) {
 				console.log('SERVER: up received');
 				
 				console.log('SERVER: up finished');
-				socket.write(command + ":finished");
+				socket.write(command + "," + num);
 				break;
 			case "fo": // forward
 				console.log('SERVER: fo received');
@@ -68,13 +71,12 @@ var server = net.createServer(function(socket) {
 				console.log(direction)
     			client
 	  				.after(1000, function() {
-	    			this.front(0.3);
-	  			}).after(1250, function() {
+	    			this.front(0.1);
+	  			}).after(2000, function() {
 	  				this.stop();
+	  				console.log('SERVER: fo finished');
+					socket.write(command + "," + num);
 	  			})
-				
-				console.log('SERVER: fo finished');
-				socket.write(command + ":finished");
 				break;
 			case "rl": // rotate left
 				console.log('SERVER: rl received');
@@ -87,7 +89,7 @@ var server = net.createServer(function(socket) {
 	  			})
 				
 				console.log('SERVER: rl finished');
-				socket.write(command + ":finished");
+				socket.write(command + "," + num);
 				break;
 			case "ra": // request acceleration data
 				console.log('SERVER: ra received');

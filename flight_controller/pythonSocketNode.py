@@ -77,26 +77,64 @@ s.connect(server_address)
 
 # 		runningAvg = 0
 
+runningCmd = 0
+
+def getCmdNum(raw):
+    if (raw == ""):
+        return -1
+
+    print("fuck luke", raw)
+    splitted = raw.split(',')
+    print(splitted)
+    return int(splitted[1])
+
+
 # Working Flight Test and drone data recieve 
-time.sleep(1)
-s.sendall(b"to")
+def issueCommand(command):
+    global runningCmd
 
-data = s.recv(4096)
-print(data)
+    while (runningCmd != 0 and getCmdNum(s.recv(4096)) != runningCmd):
+        pass
+    runningCmd+= 1
+    s.sendall(command + "," + str(runningCmd))
 
-time.sleep(5)
-s.sendall(b"fo-1")
-data = s.recv(4096)
-print(data)
 
-s.sendall(b"ra")
-data = s.recv(4096)
-print(data)
+while (s.recv(4096) != "connection confirmation"):
+    pass
+print("Connected!")
+issueCommand("to")
+issueCommand("fo")
+issueCommand("fo")
+issueCommand("fo")
+issueCommand("la")
 
-time.sleep(5)
-s.sendall(b"la")
 
-data = s.recv(4096)
-print(data)
+# data = s.recv(4096)
+# print("1", data)
+
+# time.sleep(5)
+# s.sendall(b"fo-1")
+# data = s.recv(4096)
+# print("2", data)
+
+# time.sleep(5)
+# s.sendall(b"fo-1")
+# data = s.recv(4096)
+# print("3", data)
+
+# time.sleep(5)
+# s.sendall(b"fo-1")
+# data = s.recv(4096)
+# print("4", data)
+
+# s.sendall(b"ra")
+# data = s.recv(4096)
+# print(data)
+
+# time.sleep(5)
+# s.sendall(b"la")
+
+# data = s.recv(4096)
+# print("5", data)
 
 s.close()
