@@ -73,22 +73,27 @@ def main():
     #d.draw()
     #plt.show()
 
-    reader = csv.reader(open('D:\\School\\fydp\\in_place_landed_test.csv'))
-    result = {}
+    #path = 'D:\\School\\fydp\\forward_flight_walk_test.csv'
+    path = 'D:\\School\\fydp\\backward_flight_walk_test.csv'
+    #path = 'D:\\School\\fydp\\in_place_landed_test.csv'
+
+    reader = csv.reader(open(path))
+
     count = 0
     xavg = 0
     yavg = 0
+    times = []
     xvals = []
     yvals = []
     zvals = []
     for row in reader:
         if count != 0:
-            key = count
-            result[key] = row[1:]
+            times.append(float(row[1]))
             xvals.append(float(row[4])/100)
             xavg += float(row[4])/100
             yvals.append(float(row[5])/100)
             yavg += float(row[5])/100
+
         count += 1
     #xavg = xavg/(count-2)
     xavg = 0.422342627952
@@ -96,41 +101,58 @@ def main():
     for i in range(len(xvals)):
         xvals[i] = xvals[i]-xavg
     #variance = np.var(xvals)
-    variance = 0.0012499780148043122
-    print(variance)
+    xvariance = 0.0012499780148043122
+    yvariance = 0.0012499780148043122
+    print(xvariance)
     print(xavg)
 
 
     dt = 0.005
 
-    f = KalmanFilter (dim_x=3, dim_z=1)
+    f = KalmanFilter (dim_x=6, dim_z=2)
     #pos, vel, acc
-    f.x = np.array([0., 0., 0.])
-    f.F = np.array([[1.,dt, 0.5*dt**2],[0.,1., dt],[0.,0.,1.]])
-    f.H = np.array([[0.,0., 1.]])
-    f.P = [[0,    0,      0], [  0,  0,      0],[  0,    0,  variance]]
-    f.R = np.array([[0.5]])
-    f.Q = Q_discrete_white_noise(dim=3, dt=dt, var=variance)
+    f.x = np.array([0., 0., 0.,0., 0., 0.])
+    f.F = np.array([[1., 0. , dt, 0., 0.5*dt**2 , 0.], [0., 1. , 0., dt, 0. , 0.5*dt**2] , [0., 0.,1., 0., dt, 0. ], [0., 0.,0., 1., 0., dt ],[0.,0., 0.,0.,1., 0.],[0.,0., 0.,0.,0., 1.]])
+    f.H = np.array([[0.,0.,0.,0.,1., 0.], [0.,0.,0.,0.,0., 1.]])
+    f.P = [[0.,0.,0.,0.,0., 0.],[0.,0.,0.,0.,0., 0.],[0.,0.,0.,0.,0., 0.],[0.,0.,0.,0.,0., 0.],[0.,0.,0.,0.,xvariance, 0.],[0.,0.,0.,0.,0., yvariance]]
+    f.R = np.array([[0.5, 0], [0, 0.5]])
+    f.Q = np.ones((6,6))
+    #f.Q = Q_discrete_white_noise(dim=6, dt=dt, var=xvariance)
 
     saver = Saver(f)
-    for val in xvals:
-        z = val
+    for xval, yval in zip(xvals, yvals):
+        z = [xval,yval]
         f.predict()
         f.update(z)
         saver.save()
 
     time = []
-    startTime = float(result[1][0])
-    for key, value in result.iteritems():
-        time.append((float(value[0]) - startTime) / 1000)
+    startTime = times[0]
+    for t  in times:
+        time.append((t - startTime) / 1000)
 
 
-    idkWhatThisIs, axarr = plt.subplots(3, sharex=True)
+    fig, axarr = plt.subplots(6, sharex=True)
     axarr[0].plot(time,  np.array(saver.x)[:,0])
+    axarr[0].set_title('pos X')
     axarr[1].plot(time,  np.array(saver.x)[:,1])
-    axarr[2].plot(time,  np.array(saver.x)[:,2], label="Estimated accX")
-    axarr[2].plot(time,  xvals, label="measured accX")
-    axarr[2].legend()
+    axarr[1].set_title('pos y')
+    axarr[2].plot(time,  np.array(saver.x)[:,2])
+    axarr[2].set_title('vel X')
+    axarr[3].plot(time,  np.array(saver.x)[:,3])
+    axarr[3].set_title('vel y')
+    axarr[4].plot(time,  np.array(saver.x)[:,4])
+    axarr[4].plot(time,  np.array(saver.x)[:,4], label="Estimated accX")
+    axarr[4].set_title('acc x')
+    axarr[4].plot(time,  xvals, label="measured accX")
+    axarr[4].legend()
+    axarr[5].plot(time,  np.array(saver.x)[:,5])
+    axarr[5].plot(time,  np.array(saver.x)[:,5], label="Estimated accy")
+    axarr[5].set_title('acc y')
+    axarr[5].plot(time,  yvals, label="measured accy")
+    axarr[5].legend()
+
+    fig.suptitle(path, fontsize=16)
 
     plt.show()
     #landmarkExtraction()
