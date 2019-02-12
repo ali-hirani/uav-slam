@@ -3,6 +3,8 @@ import time
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
+import json
+import csv
 from plot_data import DataPlot, RealtimePlot
 
 
@@ -77,36 +79,51 @@ s.connect(server_address)
 
 # 		runningAvg = 0
 
-runningCmd = 0
+runningCmdNum = 0
+f = csv.writer(open("test.csv", "wb+"))
+f.writerow(['num', 'timestamp', 'ctrlState', 'flyState', 'a_x', 'a_y', 'a_z', 'g_x', 'g_y', 'g_z', 'front_back_deg', 'left_right_deg', 'clockwise_deg' ])
 
 def getCmdNum(raw):
     if (raw == ""):
         return -1
 
-    print("fuck luke", raw)
-    splitted = raw.split(',')
-    print(splitted)
-    return int(splitted[1])
+    # print("fuck luke", raw)
+    payloadJSON = json.loads(raw)
 
+    # if we are receiving IMU data
+    if payloadJSON["command"] == "ra":
+        writeData(payloadJSON)
+
+    return int(payloadJSON["num"])
+
+def writeData(data):
+    if (data["dataValid"] == True):
+        f.writerow([data['num'], data['timestamp'], data['controlState'], data['flyState'], data['accelerometers']['x'], data['accelerometers']['y'], data['accelerometers']['z'],
+            data['gyroscopes']['x'], data['gyroscopes']['y'], data['gyroscopes']['z'], data['frontBackDegrees'], data['leftRightDegrees'], data['clockwiseDegrees']])
+        print("unique", data)
+        # Write to CSV file
 
 # Working Flight Test and drone data recieve 
 def issueCommand(command):
-    global runningCmd
+    global runningCmdNum
 
-    while (runningCmd != 0 and getCmdNum(s.recv(4096)) != runningCmd):
+    while (runningCmdNum != 0 and getCmdNum(s.recv(4096)) != runningCmdNum):
         pass
-    runningCmd+= 1
-    s.sendall(command + "," + str(runningCmd))
+    runningCmdNum+= 1
+    s.sendall(command + "," + str(runningCmdNum))
 
 
 while (s.recv(4096) != "connection confirmation"):
     pass
 print("Connected!")
-issueCommand("to")
-issueCommand("fo")
-issueCommand("fo")
-issueCommand("fo")
-issueCommand("la")
+
+while True:
+    issueCommand("ra")
+# issueCommand("to")
+# issueCommand("fo")
+# issueCommand("fo")
+# issueCommand("fo")
+# issueCommand("la")
 
 
 # data = s.recv(4096)

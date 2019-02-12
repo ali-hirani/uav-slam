@@ -9,15 +9,37 @@ client.config('general:navdata_demo', 'FALSE');
 
 var count = 0;
 var accelerationData;
+var payload = {};
+var prevTimestamp = null
 
-var foo = function(yolo) {
-	if (count % 40 == 0) {
-		accelerationData = yolo.physMeasures
-	}
+var getData = function(data) {
+	// if (count % 0 == 0) {
+	accelerationData = data.physMeasures //  pyardrone.navdata.options.PhysMeasures
+
+	if (!accelerationData) return
+	
+	payload.timestamp = data.time
+	payload.accelerometers = accelerationData.accelerometers
+	payload.gyroscopes = accelerationData.gyroscopes
+
+	payload.controlState = data.demo.controlState
+	payload.flyState = data.demo.flyState
+	// payload.batteryPercentage = data.demo.batteryPercentage
+	payload.frontBackDegrees = data.demo.frontBackDegrees
+	payload.leftRightDegrees = data.demo.leftRightDegrees
+	payload.clockwiseDegrees = data.demo.clockwiseDegrees
+	// payload.altitude = data.demo.altitude
+	// payload.velocity = data.demo.velocity
+	// payload.xVelocity = data.demo.xVelocity
+	// payload.yVelocity = data.demo.yVelocity
+	// payload.zVelocity = data.demo.zVelocity
+
+	console.log(JSON.stringify(payload))
+	// }
 	count++;
 }
 
-client.on('navdata', foo);
+client.on('navdata', getData);
 
 // client.config('general:navdata_demo', 'FALSE');
 // client.on('navdata', console.log);
@@ -45,7 +67,9 @@ var server = net.createServer(function(socket) {
 
 				client.takeoff(function () {
 					console.log('SERVER: to finished');
-					socket.write(command + "," + num);
+					payload.command = command
+					payload.num = num
+					socket.write(JSON.stringify(payload));
 				})
 				
 				break;
@@ -55,7 +79,9 @@ var server = net.createServer(function(socket) {
 				client.stop();
 				client.land(function () {
 					console.log('SERVER: la finished');
-					socket.write(command + "," + num);
+					payload.command = command
+					payload.num = num
+					socket.write(JSON.stringify(payload));
 				})
 				                     
 				break;
@@ -63,7 +89,9 @@ var server = net.createServer(function(socket) {
 				console.log('SERVER: up received');
 				
 				console.log('SERVER: up finished');
-				socket.write(command + "," + num);
+				payload.command = command
+				payload.num = num
+				socket.write(JSON.stringify(payload));
 				break;
 			case "fo": // forward
 				console.log('SERVER: fo received');
@@ -75,7 +103,9 @@ var server = net.createServer(function(socket) {
 	  			}).after(2000, function() {
 	  				this.stop();
 	  				console.log('SERVER: fo finished');
-					socket.write(command + "," + num);
+					payload.command = command
+					payload.num = num
+					socket.write(JSON.stringify(payload));
 	  			})
 				break;
 			case "rl": // rotate left
@@ -89,17 +119,33 @@ var server = net.createServer(function(socket) {
 	  			})
 				
 				console.log('SERVER: rl finished');
-				socket.write(command + "," + num);
+				payload.command = command
+				payload.num = num
+				socket.write(JSON.stringify(payload));
 				break;
 			case "ra": // request acceleration data
 				console.log('SERVER: ra received');
 				
 				console.log('SERVER: ra finished');
-				socket.write(JSON.stringify(accelerationData));
+
+				if (!prevTimestamp || prevTimestamp != payload.timestamp) {
+					payload.command = command
+					payload.num = num
+					payload.dataValid = true
+					socket.write(JSON.stringify(payload));
+					prevTimestamp = payload.timestamp
+
+				} else {
+					payload.command = command
+					payload.num = num
+					payload.dataValid = false
+					socket.write(JSON.stringify(payload));
+				}
 				break;
 			default:
 				console.log('SERVER: un recognized command');
-				socket.write("un recognized command");
+				payload.command = "unknown"
+				payload.num = "-1"
 		}
 	});
 
