@@ -5,6 +5,8 @@
 telnet 192.168.1.1
 killall udhcpd; iwconfig ath0 mode managed essid "fydp-falaj"; ifconfig ath0 10.42.0.8 netmask 255.255.255.0 up;
 
+killall udhcpd; iwconfig ath0 mode managed essid "ashwin-krishnan"; ifconfig ath0 10.42.0.8 netmask 255.255.255.0 up;
+
 4. Ali - run node js server
 
 node testServer.js
@@ -16,3 +18,12 @@ python pythonSocketNode.py
 6. Cover sensor to take off
 7. Stop covering sensor to land
 
+
+
+How to Connect Pi:
+1. en4 - my ethernet
+2. sudo ifconfig en4 1.2.3.1 up netmask 255.255.255.0
+3. ssh pi@1.2.3.4
+4. testing123
+
+python udp_sender.py 1.2.3.1 4

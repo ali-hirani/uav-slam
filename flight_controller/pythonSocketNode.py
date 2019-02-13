@@ -9,10 +9,11 @@ from plot_data import DataPlot, RealtimePlot
 
 
 # Sensor Stuff
-# fig, axes = plt.subplots()
-# data = DataPlot()
-# dataplotter = RealtimePlot(axes)
-# sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
+fig, axes = plt.subplots()
+data = DataPlot()
+dataplotter = RealtimePlot(axes)
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
+sock.setblocking(0)
 # sock1 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
 
 # Drone/Node server
@@ -23,65 +24,29 @@ port = 1337
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_address = (ip, port)
 s.connect(server_address)
+s.setblocking(0)
 
-# def udp_init(ip):
-#     UDP_IP = ip
-#     UDP_PORT = 5005
-#     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-#     sock.bind((UDP_IP,UDP_PORT))
+def udp_init(ip):
+    UDP_IP = ip
+    UDP_PORT = 5005
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind((UDP_IP,UDP_PORT))
 
-#     UDP_PORT1 = 2000
-#     sock1.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-#     sock1.bind((UDP_IP,UDP_PORT1))
+    # UDP_PORT1 = 2000
+    # sock1.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    # sock1.bind((UDP_IP,UDP_PORT1))
 
-# def plot_setup(title):
-#     plt.title(title)
-#     plt.ylabel("Sensor Data in mm")
+def plot_setup(title):
+    plt.title(title)
+    plt.ylabel("Sensor Data in mm")
 
-# def plot_data(x, y, y2):
-#     x = float(x)
-#     y = float(y)
-#     y2 = float(y2)
-#     data.add(x,y,y2)
-#     dataplotter.plot(data)  
-#     plt.pause(0.0001)
-
-
-# Change to host laptop IP
-# receive sensor data
-# udp_init("10.42.0.143")
-# plot_setup("VL6180x Sensor Data")
-
-# runningAvg = 0
-# iteration = 0
-# i = 0
-# while True:
-# 	iteration += 1
-# 	i += 1
-# 	sensor_data_low, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-# 	# sensor_data_high, addr = sock1.recvfrom(1024) # buffer size is 1024 bytes
-
-# 	runningAvg += int(sensor_data_low)
-
-# 	plot_data(i, sensor_data_low, 0)
-
-# 	if (iteration == 5) :
-# 		runningAvg = runningAvg / iteration
-# 		iteration = 0
-
-# 		print(runningAvg)
-
-# 		# take off when sensor is really close
-# 		if (runningAvg < 40) :
-# 			s.sendall(b"to")
-# 		elif (runningAvg > 200) :
-# 			s.sendall(b"la")
-
-# 		runningAvg = 0
-
-runningCmdNum = 0
-f = csv.writer(open("test.csv", "wb+"))
-f.writerow(['timestamp', 'ctrlState', 'flyState', 'a_x', 'a_y', 'a_z', 'g_x', 'g_y', 'g_z', 'front_back_deg', 'left_right_deg', 'clockwise_deg' ])
+def plot_data(x, y, y2):
+    x = float(x)
+    y = float(y)
+    y2 = float(y2)
+    data.add(x,y,y2)
+    dataplotter.plot(data)  
+    plt.pause(0.0001)
 
 def getCmdNum(raw):
     if (raw == ""):
@@ -97,14 +62,14 @@ def getCmdNum(raw):
     else:
         return int(payloadJSON["num"])
 
-def writeData(data):
+def writeData(f, data):
     if (data["dataValid"] == True):
         f.writerow([data['timestamp'], data['controlState'], data['flyState'], data['accelerometers']['x'], data['accelerometers']['y'], data['accelerometers']['z'],
             data['gyroscopes']['x'], data['gyroscopes']['y'], data['gyroscopes']['z'], data['frontBackDegrees'], data['leftRightDegrees'], data['clockwiseDegrees']])
         print("unique", data)
         # Write to CSV file
 
-# Working Flight Test and drone data recieve 
+# # Working Flight Test and drone data recieve 
 def issueCommand(command):
     global runningCmdNum
 
@@ -114,12 +79,47 @@ def issueCommand(command):
     s.sendall(command + "," + str(runningCmdNum))
 
 
-while (s.recv(4096) != "connection confirmation"):
-    pass
-print("Connected!")
+# Change to host laptop IP
+# receive sensor data
+# udp_init("10.42.0.25")
+udp_init("1.2.3.1")
+#plot_setup("VL6180x Sensor Data")
 
-issueCommand("to")
-issueCommand("la")
+f = csv.writer(open("sensor_and_imu_data.csv", "wb+"))
+f.writerow(['timestamp', 'ctrlState', 'flyState', 'a_x', 'a_y', 'a_z', 'g_x', 'g_y', 'g_z', 'front_back_deg', 'left_right_deg', 'clockwise_deg' ])
+
+runningAvg = 0
+iteration = 0
+i = 0
+while True:
+    iteration += 1
+    i += 1
+
+    try:
+        sensor_data_low, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
+        print(sensor_data_low)
+        f.writerow(["depth", time.time(),sensor_data_low])
+        # sensor_data_high, addr = sock1.recvfrom(1024) # buffer size is 1024 bytes
+    except Exception as e:
+        pass
+
+    try:
+        raw = s.recv(4096)
+        payloadJSON = json.loads(raw)
+        if payloadJSON["command"] == "ra":
+            writeData(f, payloadJSON)
+    except Exception as e:
+        pass
+    
+
+runningCmdNum = 0
+
+# while (s.recv(4096) != "connection confirmation"):
+#     pass
+# print("Connected!")
+
+# issueCommand("to")
+# issueCommand("la")
 # issueCommand("to")
 # issueCommand("fo")
 # issueCommand("fo")

@@ -34,7 +34,7 @@ var getData = function(data) {
 	// payload.yVelocity = data.demo.yVelocity
 	// payload.zVelocity = data.demo.zVelocity
 
-	console.log(JSON.stringify(payload))
+	// console.log(JSON.stringify(payload))
 	// }
 	count++;
 }
