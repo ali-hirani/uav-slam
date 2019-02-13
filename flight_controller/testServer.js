@@ -50,6 +50,17 @@ var server = net.createServer(function(socket) {
 	// confrim to client that connection was succesful
 	socket.write('connection confirmation');
 	console.log('SERVER: Connected');
+
+	setInterval(function() {
+    	if (payload && (!prevTimestamp || prevTimestamp < payload.timestamp)) {
+			payload.command = "ra"
+			// payload.num = num
+			payload.dataValid = true
+			socket.write(JSON.stringify(payload))
+			prevTimestamp = payload.timestamp
+			console.log(JSON.stringify(payload))
+		}
+	}, 100)
 	
 	// handle incoming requests of format "up:2" - "<two char command>:<optional float quantity>"
 	socket.on('data', function (data) {

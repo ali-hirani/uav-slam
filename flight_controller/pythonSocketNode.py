@@ -81,7 +81,7 @@ s.connect(server_address)
 
 runningCmdNum = 0
 f = csv.writer(open("test.csv", "wb+"))
-f.writerow(['num', 'timestamp', 'ctrlState', 'flyState', 'a_x', 'a_y', 'a_z', 'g_x', 'g_y', 'g_z', 'front_back_deg', 'left_right_deg', 'clockwise_deg' ])
+f.writerow(['timestamp', 'ctrlState', 'flyState', 'a_x', 'a_y', 'a_z', 'g_x', 'g_y', 'g_z', 'front_back_deg', 'left_right_deg', 'clockwise_deg' ])
 
 def getCmdNum(raw):
     if (raw == ""):
@@ -93,12 +93,13 @@ def getCmdNum(raw):
     # if we are receiving IMU data
     if payloadJSON["command"] == "ra":
         writeData(payloadJSON)
-
-    return int(payloadJSON["num"])
+        return -1
+    else:
+        return int(payloadJSON["num"])
 
 def writeData(data):
     if (data["dataValid"] == True):
-        f.writerow([data['num'], data['timestamp'], data['controlState'], data['flyState'], data['accelerometers']['x'], data['accelerometers']['y'], data['accelerometers']['z'],
+        f.writerow([data['timestamp'], data['controlState'], data['flyState'], data['accelerometers']['x'], data['accelerometers']['y'], data['accelerometers']['z'],
             data['gyroscopes']['x'], data['gyroscopes']['y'], data['gyroscopes']['z'], data['frontBackDegrees'], data['leftRightDegrees'], data['clockwiseDegrees']])
         print("unique", data)
         # Write to CSV file
@@ -117,8 +118,8 @@ while (s.recv(4096) != "connection confirmation"):
     pass
 print("Connected!")
 
-while True:
-    issueCommand("ra")
+issueCommand("to")
+issueCommand("la")
 # issueCommand("to")
 # issueCommand("fo")
 # issueCommand("fo")
