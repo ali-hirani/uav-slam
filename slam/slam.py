@@ -7,6 +7,31 @@ from filterpy.common import Q_discrete_white_noise
 from filterpy.common import Saver
 import csv
 
+"""
+Pseudocode:
+
+def kalman(currentState, acceleration, landmark):
+
+def removeGravity(currentState, acceleration) -> returns x,y acceleration
+def removeTilt(tilt, depths) -> returns depths corrected into xy plane
+
+better flight
+
+lines? 
+landmark recognition/asociation
+    -see point, is it a part of a current wall or a new wall
+    -update wall 
+
+landmakr ascosciation
+
+navigation:
+-converting landmarks to "usable data"
+-making navigation desisions
+-emergency stop
+
+make it actually realtime
+"""
+
 def depthToPoint(drone, sensorIndex, depth):
     p1 = np.add(drone.sensors[sensorIndex].offset, [drone.pos[0], drone.pos[1]])
     p2 = [p1[0], p1[1]+depth]
@@ -63,6 +88,12 @@ def rotate(origin, point, angle):
     qy = oy + math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
     return [qx, qy]
 
+def readFile(path):
+    pass
+
+def correctForGrav(rots, accel):
+    pass
+
 def main():
     s1 = Sensor([0.05,0.], 0)
 
@@ -84,6 +115,7 @@ def main():
 
     reader = csv.reader(open(path))
 
+    #builds list of measurments
     count = 0
     xavg = 0
     yavg = 0
@@ -99,7 +131,7 @@ def main():
     rots = []
     rotsfb = []
     rotslr = []
-
+    # 90% of the crap in here is gathering "metadata" on the measurments, xavg etc
     for row in reader:
         if count != 0:
             if row[0] == "depth":
@@ -148,6 +180,8 @@ def main():
     xvariance = 0.01
     yvariance = 0.01
 
+
+    # attempt at correctign for gravity
     xProper = []
     yProper = []
     zProper = []
@@ -209,9 +243,10 @@ def main():
     print("correctedx: " , xCAvg)
     print("correctedy: " , yCAvg)
 
-
+    #time step gathered from average
     dt = dtavg
 
+    # KALMAN FILTER:
     # x is 6 and we use 2 meaUSREMENTS
     f = KalmanFilter (dim_x=6, dim_z=2)
     #posxy, velxy, accxy
@@ -227,6 +262,8 @@ def main():
     nvar = 0.08
     #f.Q = np.concatenate( (np.concatenate((Q_discrete_white_noise(dim=3, dt=dt, var=nvar), Q_discrete_white_noise(dim=3, dt=dt, var=nvar))), np.concatenate((Q_discrete_white_noise(dim=3, dt=dt, var=nvar), Q_discrete_white_noise(dim=3, dt=dt, var=nvar)))),axis=1)
 
+    #Actual Kalman loop
+    #for each value measurement in arrays estimate state
     saver = Saver(f)
     for xval, yval in zip(xProper, yProper):
         z = [xval,yval]
@@ -234,6 +271,8 @@ def main():
         f.update(z)
         saver.save()
 
+    # this loop makes the room drawing
+    #it ignores position estimate and juust uses depth and rot. its seperate from above stuff
     wallPointsx = []
     wallPointsy = []
     for i in range(0, len(rots)):
@@ -244,7 +283,7 @@ def main():
         wallPointsx.append(p[0])
         wallPointsy.append(p[1])
 
-
+    # graphs all the stuff
     fig, axarr = plt.subplots(2, sharex=True)
     axarr[0].plot(time,  np.array(saver.x)[:,0]*0.1, label="posX")
     axarr[0].set_title('pos')
