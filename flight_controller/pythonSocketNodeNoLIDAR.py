@@ -7,16 +7,46 @@ import json
 import csv
 import math
 from plot_data import DataPlot, RealtimePlot
+import state
+import EKF
 
-
+#========== GLOBALS =============
 # Drone/Node server
 ip = '127.0.0.1'
 port = 1337
+socketToNode = None
+
+runningCmdNum = 0
+notBusy = False
+x = 0
+y = 0
+prevTimeStamp = 0
+
+counter = 0
+
+globalState = None
 
 # connect to node server
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_address = (ip, port)
-s.connect(server_address)
+# will block until connection confirmation received
+def connectToNodeServer(ip, port):
+    # connect to node server
+    global socketToNode
+    socketToNode = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_address = (ip, port)
+    socketToNode.connect(server_address)
+
+    while (socketToNode.recv(4096) != "connection confirmation"):
+        pass
+    print("Connected!")
+
+# initialize state
+# to be determined: What is state
+def initState():
+    global globalState
+    s1 = state.Sensor([0.05,0.], 0)
+
+    d = state.Drone([s1])
+    globalState = state.State(d)
 
 def getCmdNum(raw):
     if (raw == ""):
@@ -38,7 +68,7 @@ def writeData(data):
         f.writerow([data['timestamp'], data['controlState'],data['flyState'],data['accelerometers']['x'],data['accelerometers']['y'],data['accelerometers']['z'],data['gyroscopes']['x'],data['gyroscopes']['y'],data['gyroscopes']['z'],data['frontBackDegrees'],data['leftRightDegrees'],data['clockwiseDegrees'],data['xVelocity'],data['yVelocity'],data['zVelocity']])
         # Write to CSV file
 
-# Working Flight Test and drone data recieve 
+# Working Flight Test and drone data recieve
 def issueCommand(command):
     global runningCmdNum
     notBusy = False
@@ -46,7 +76,7 @@ def issueCommand(command):
     # while (runningCmdNum != 0 and getCmdNum(s.recv(4096)) != runningCmdNum):
     #     pass
     runningCmdNum+= 1
-    s.sendall(command + "," + str(runningCmdNum))
+    socketToNode.sendall(command + "," + str(runningCmdNum))
 
 def efkPredict(dt, vx, vy, yaw):
     global x, y
@@ -83,43 +113,37 @@ f = csv.writer(open("yolo.csv", "wb+"))
 # f.writerow(['timestamp', 'ctrlState', 'flyState', 'a_x', 'a_y', 'a_z', 'g_x', 'g_y', 'g_z', 'front_back_deg', 'left_right_deg', 'clockwise_deg', 'x_v', 'y_v', 'z_v' ])
 f.writerow(['fuck you', 'dt', 'vx', 'vy', 'yaw', 'dx', 'dy', 'x,' 'y'])
 
-while (s.recv(4096) != "connection confirmation"):
-    pass
-print("Connected!")
+initState()
 
-runningCmdNum = 0
-notBusy = False
-x = 0
-y = 0
-prevTimeStamp = 0
-
-# while (s.recv(4096) != "connection confirmation"):
-#     pass
-# print("Connected!")
-
+connectToNodeServer(ip, port)
 issueCommand("to")
-counter = 0
-
 while True:
     counter += 1
     try:
-        raw = s.recv(4096)
+        raw = socketToNode.recv(4096)
         payloadJSON = json.loads(raw)
         if payloadJSON["command"] == "ra":
-            # print(payloadJSON)
-            processData(payloadJSON)
+            #print(payloadJSON)
+
+
+            # state = ....
+            EKF.processData(payloadJSON, globalState)
+
+
+            #processData(payloadJSON)
             # writeData(payloadJSON)
         else :
+            #handle callbacks
             if runningCmdNum == int(payloadJSON["num"]):
                 notBusy = True
 
     except Exception as e:
         pass
 
-    if counter == 50:
-        issueCommand("fo")
-
-    if counter == 150:
+    # if counter == 50:
+    #     issueCommand("fo")
+    #
+    if counter == 300:
         issueCommand("la")
 
 s.close()
