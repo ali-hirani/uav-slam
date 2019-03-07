@@ -9,6 +9,7 @@ import math
 from plot_data import DataPlot, RealtimePlot
 import state
 import EKF
+import flightPlanner
 
 #========== GLOBALS =============
 # Drone/Node server
@@ -17,14 +18,13 @@ port = 1337
 socketToNode = None
 
 runningCmdNum = 0
-notBusy = False
-x = 0
-y = 0
+#start busy until you connect to drone
 prevTimeStamp = 0
 
 counter = 0
 
 globalState = None
+
 
 # connect to node server
 # will block until connection confirmation received
@@ -37,29 +37,18 @@ def connectToNodeServer(ip, port):
 
     while (socketToNode.recv(4096) != "connection confirmation"):
         pass
+
+    globalState.busy = False
     print("Connected!")
 
-# initialize state
-# to be determined: What is state
+# initialize state - basically just set up the sensors
 def initState():
     global globalState
     s1 = state.Sensor([0.05,0.], 0)
 
-    d = state.Drone([s1])
-    globalState = state.State(d)
+    globalState = state.State(s1)
+    globalState.busy = True
 
-def getCmdNum(raw):
-    if (raw == ""):
-        return -1
-
-    payloadJSON = json.loads(raw)
-
-    # if we are receiving IMU data
-    if payloadJSON["command"] == "ra":
-        # writeData(payloadJSON)
-        return -1
-    else:
-        return int(payloadJSON["num"])
 
 def writeData(data):
     # print(data)
@@ -71,79 +60,57 @@ def writeData(data):
 # Working Flight Test and drone data recieve
 def issueCommand(command):
     global runningCmdNum
-    notBusy = False
+    globalState.busy = True
 
     # while (runningCmdNum != 0 and getCmdNum(s.recv(4096)) != runningCmdNum):
     #     pass
     runningCmdNum+= 1
+    print("issued :  " + command + "," + str(runningCmdNum))
     socketToNode.sendall(command + "," + str(runningCmdNum))
 
-def efkPredict(dt, vx, vy, yaw):
-    global x, y
-    dx = vx * dt
-    print("dx", dx)
-    dy = vy * dt
-    print("dy", dy)
-    x = x + dx * math.cos(yaw) - dy * math.sin(yaw)
-    print("x", x)
-    y = y + dx * math.sin(yaw) + dy * math.cos(yaw)
-    print("y", y)
 
-    f.writerow(['fuck you', dt, vx, vy, yaw, dx, dy, x, y])
+# ==== "MAIN" ====
 
-
-def processData(json):
-    global prevTimeStamp
-
-    # extract usful data
-    if prevTimeStamp <= 0:
-        prevTimeStamp = float(json['timestamp']) / 1000
-        return
-
-    dt = (float(json['timestamp']) / 1000) - prevTimeStamp
-    vx = float(json['xVelocity']) / 1000 # convert to m/s
-    vy = float(json['yVelocity']) / 1000 # convert to m/s
-    yaw = float(json['clockwiseDegrees']) *  math.pi / 180;
-
-    efkPredict(dt, vx, vy, yaw)
-
-    prevTimeStamp = float(json['timestamp']) / 1000
-
+# file writing stuff that we will need later so its still here
 f = csv.writer(open("yolo.csv", "wb+"))
 # f.writerow(['timestamp', 'ctrlState', 'flyState', 'a_x', 'a_y', 'a_z', 'g_x', 'g_y', 'g_z', 'front_back_deg', 'left_right_deg', 'clockwise_deg', 'x_v', 'y_v', 'z_v' ])
 f.writerow(['fuck you', 'dt', 'vx', 'vy', 'yaw', 'dx', 'dy', 'x,' 'y'])
 
+
 initState()
 
 connectToNodeServer(ip, port)
-issueCommand("to")
+
 while True:
-    counter += 1
     try:
+        # blocking receive - if we dont have data and we already processed the last packet then we good
         raw = socketToNode.recv(4096)
         payloadJSON = json.loads(raw)
+        # if its 'data'...
         if payloadJSON["command"] == "ra":
             #print(payloadJSON)
+            # only count on good data
+            counter += 1
 
+            # update our idea of where we are and whats around us
+            globalState = EKF.processData(payloadJSON, globalState)
+            # use updated state to figure out what to do
+            command = flightPlanner.planFlight(globalState, counter)
 
-            # state = ....
-            EKF.processData(payloadJSON, globalState)
+            # if we should then issue the command
+            if command != -1 :
+                issueCommand(command)
 
-
-            #processData(payloadJSON)
             # writeData(payloadJSON)
         else :
-            #handle callbacks
+            #handle callbacks TODO: this is fragile as all hell
             if runningCmdNum == int(payloadJSON["num"]):
-                notBusy = True
+                print("received confirmation: " + runningCmdNum)
+                globalState.busy = False
 
     except Exception as e:
+        print("Main loop encountered a problem: " + e)
         pass
 
-    # if counter == 50:
-    #     issueCommand("fo")
-    #
-    if counter == 300:
-        issueCommand("la")
 
-s.close()
+socketToNode.close()

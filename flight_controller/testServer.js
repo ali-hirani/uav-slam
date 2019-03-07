@@ -73,7 +73,7 @@ var server = net.createServer(function(socket) {
 
 	// handle incoming requests of format "up:2" - "<two char command>:<optional float quantity>"
 	socket.on('data', function (data) {
-		console.log("SERVER: " + data);
+		console.log("SERVER RAW COMMAND RECEIVED: " + data);
 
 		var array = data.split(',');
 		var command = array[0]
