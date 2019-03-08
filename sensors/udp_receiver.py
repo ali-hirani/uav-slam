@@ -14,7 +14,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
 
 def udp_init(ip):
     UDP_IP = ip
-    UDP_PORT = 5005
+    UDP_PORT = 5005 
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind((UDP_IP,UDP_PORT))
 
@@ -34,11 +34,11 @@ def plot_data(x, y, y2):
     
 
 #inits
-udp_init("192.168.0.104")
+udp_init("192.168.43.12")
 plot_setup("VL6180x Sensor Data")
 i = 0 
 while True:
         i += 1
         sensor_data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
         print sensor_data
-        plot_data(i, sensor_data, 0)
+       # plot_data(i, sensor_data, 0)
