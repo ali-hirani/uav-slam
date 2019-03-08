@@ -4,7 +4,6 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 from plot_data import DataPlot, RealtimePlot
-from matplotlib import style
 
 
 fig, axes = plt.subplots()
@@ -14,12 +13,16 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
 
 def udp_init(ip):
     UDP_IP = ip
+<<<<<<< HEAD
     UDP_PORT = 5005 
+=======
+    UDP_PORT = 2000
+>>>>>>> ddccd1269eedc9589d981f9996955aa60ea9b194
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind((UDP_IP,UDP_PORT))
 
 def plot_setup(title):
-    style.use('fivethirtyeight')
+    # style.use('fivethirtyeight')
     plt.title(title)
     plt.ylabel("Sensor Data in mm")
 
@@ -34,7 +37,12 @@ def plot_data(x, y, y2):
     
 
 #inits
+<<<<<<< HEAD
 udp_init("192.168.43.12")
+=======
+# udp_init("192.168.0.104")
+udp_init("10.42.0.143")
+>>>>>>> ddccd1269eedc9589d981f9996955aa60ea9b194
 plot_setup("VL6180x Sensor Data")
 i = 0 
 while True:
