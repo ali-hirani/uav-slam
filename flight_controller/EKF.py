@@ -30,9 +30,9 @@ def processData(jsonPayload, curState):
 
 
 def efkPredict(state):
-    dx = state.vx * dt
+    dx = state.vx * state.dt
     #print("dx", dx)
-    dy = state.vy * dt
+    dy = state.vy * state.dt
     #print("dy", dy)
     state.x = state.x + dx * math.cos(state.yaw) - dy * math.sin(state.yaw)
     #print("x", x)

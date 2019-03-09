@@ -2,14 +2,6 @@ import sys
 import telnetlib
 from wireless import Wireless
 
-print len(sys.argv)
-if len(sys.argv) == 1:
-    flag = 0
-
-else:
-    flag = sys.argv[1]
-
-
 def drone_connect():
         
     print "connecting to drone..."
@@ -17,6 +9,7 @@ def drone_connect():
     res = wireless.connect(ssid='ardrone2_047592', password='')
     if not res:
         print "error connecting..."
+        return
 
     print "connected. starting telnet"
 
@@ -27,8 +20,8 @@ def drone_connect():
     tn.write("exit\n")
 
 def network_connect():
-
     print "connecting to ssid: Ashwin"
+    wireless = Wireless()
     res = wireless.connect(ssid='Ashwin', password='')
     if not res:
         print "error connecting..."
@@ -58,15 +51,7 @@ def raspi_telnet():
     tn.write("exit\n")
     print tn.read_all()
 
-if flag == 1:
-    raspi_telnet()
-
-if flag == 2:
-    network_connect()
-
-if flag == 0:
-    drone_connect()
-    network_connect()
-    raspi_telnet()
-
+drone_connect()
+network_connect()
+raspi_telnet()
 

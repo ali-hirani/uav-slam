@@ -39,7 +39,7 @@ def connectToNodeServer(ip, port):
         pass
 
     globalState.busy = False
-    print("Connected!")
+    print("Connected to Node!")
 
 # initialize state - basically just set up the sensors
 def initState():
@@ -51,11 +51,12 @@ def initState():
 
 
 def writeData(data):
+    f.writerow([data])
+
     # print(data)
-    if (data["dataValid"] == True):
-        pass
-        f.writerow([data['timestamp'], data['controlState'],data['flyState'],data['accelerometers']['x'],data['accelerometers']['y'],data['accelerometers']['z'],data['gyroscopes']['x'],data['gyroscopes']['y'],data['gyroscopes']['z'],data['frontBackDegrees'],data['leftRightDegrees'],data['clockwiseDegrees'],data['xVelocity'],data['yVelocity'],data['zVelocity']])
-        # Write to CSV file
+    # if (data["dataValid"] == True):
+    #     pass
+    #     f.writerow([data['timestamp'], data['controlState'],data['flyState'],data['accelerometers']['x'],data['accelerometers']['y'],data['accelerometers']['z'],data['gyroscopes']['x'],data['gyroscopes']['y'],data['gyroscopes']['z'],data['frontBackDegrees'],data['leftRightDegrees'],data['clockwiseDegrees'],data['xVelocity'],data['yVelocity'],data['zVelocity']])
 
 # Working Flight Test and drone data recieve
 def issueCommand(command):
@@ -88,7 +89,8 @@ while True:
         payloadJSON = json.loads(raw)
         # if its 'data'...
         if payloadJSON["command"] == "ra":
-            #print(payloadJSON)
+            print(payloadJSON)
+            writeData(raw)
             # only count on good data
             counter += 1
 
@@ -100,8 +102,6 @@ while True:
             # if we should then issue the command
             if command != -1 :
                 issueCommand(command)
-
-            # writeData(payloadJSON)
         else :
             #handle callbacks TODO: this is fragile as all hell
             if runningCmdNum == int(payloadJSON["num"]):
@@ -109,7 +109,7 @@ while True:
                 globalState.busy = False
 
     except Exception as e:
-        print("Main loop encountered a problem: " + e)
+        print("Main loop encountered a problem: " + str(e))
         pass
 
 
