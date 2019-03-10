@@ -1,6 +1,7 @@
 import state
 import math
 import json
+import numpy as np
 
 # acceept a json object and state, and return a new state object
 def processData(jsonPayload, curState):
@@ -10,7 +11,12 @@ def processData(jsonPayload, curState):
         curState.time = (float(jsonPayload['timestamp']) / 1000) # to seconds
         curState.vx = float(jsonPayload['xVelocity']) / 1000 # convert to m/s
         curState.vy = float(jsonPayload['yVelocity']) / 1000 # convert to m/s
-        curState.yaw = float(jsonPayload['clockwiseDegrees']) *  math.pi / 180;
+        curState.yaw = float(jsonPayload['clockwiseDegrees']) *  math.pi / 180
+        curState.yaw = wraptopi(curState.yaw)
+
+
+        curState.depths = [float(jsonPayload['lidar1'])/100, float(jsonPayload['lidar2'])/100, float(jsonPayload['lidar3'])/100, float(jsonPayload['lidar4'])/100]
+
         curState.valid = True
         return curState
 
@@ -45,3 +51,10 @@ def efkPredict(state):
 def efkUpdate(state):
     pass
     return state
+
+def wraptopi(x):
+    if x > math.pi:
+        x = x - (np.floor(x / (2 * np.pi)) + 1) * 2 * math.pi
+    elif x < -np.pi:
+        x = x + (np.floor(x / (-2 * np.pi)) + 1) * 2 * math.pi
+    return x
