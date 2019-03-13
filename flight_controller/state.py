@@ -46,6 +46,7 @@ class State:
         # ==== metadata ====
         self.valid = False
         self.busy = False
+        self.after_counter = 0
         # active command, etc?
         # coutner
         # csv file handle?

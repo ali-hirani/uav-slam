@@ -8,9 +8,9 @@ client.on('navdata', console.log);
 
 client.takeoff(function () {
 	client
-	  .after(1250, function() {
+	  .after(2000, function() {
 	  	console.log("clockwise rotation");
-	    this.clockwise(0.3);
+	    this.clockwise(0.1);
 	  })
 	  .after(5000, function() {
 	  	console.log("stop");
@@ -18,7 +18,7 @@ client.takeoff(function () {
 	  })
 	  .after(1250, function() {
 	  	console.log("counter_clockwise rotation");
-	  	this.clockwise(-0.3);
+	  	this.clockwise(-0.1);
 	  })
 	  .after(5000, function() {
 	  	console.log("land");

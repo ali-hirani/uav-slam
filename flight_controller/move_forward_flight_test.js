@@ -7,7 +7,7 @@ client.on('navdata', console.log);
 
 client.takeoff(function () {
 	client
-	  .after(1000, function() {
+	  .after(5000, function() {
 	    this.front(0.1);
 	  })
 	  .after(1000, function() {

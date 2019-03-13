@@ -4,7 +4,7 @@ var arDrone = require('ar-drone');
 
 // var droneClient  = arDrone.createClient();
 // When we are telnetting
-var droneClient  = arDrone.createClient({ip:"192.168.43.50"});
+var droneClient  = arDrone.createClient({ip:"192.168.1.1"});
 droneClient.config('general:navdata_demo', 'FALSE');
 
 var piBuffer = ""
@@ -150,7 +150,7 @@ var server = net.createServer(function(socket) {
 
         var array = data.split(',');
         var command = array[0]
-        var num = array[1]
+        var num = 10//keep this constant
 
         var direction = parseFloat(data.slice(2));
         switch(command) {
@@ -186,8 +186,8 @@ var server = net.createServer(function(socket) {
                 payload.num = num
                 socket.write(JSON.stringify(payload));
                 break;
-            case "fo": // forward
-                console.log('SERVER: fo received');
+            case "front": // forward
+                console.log('SERVER: front received');
 
                 console.log(direction)
                 droneClient
@@ -195,7 +195,52 @@ var server = net.createServer(function(socket) {
                     this.front(0.1);
                 }).after(2000, function() {
                     this.stop();
-                    console.log('SERVER: fo finished');
+                    console.log('SERVER: front finished');
+                    payload.command = command
+                    payload.num = num
+                    socket.write(JSON.stringify(payload));
+                })
+                break;
+                case "back": // forward
+                console.log('SERVER: back received');
+
+                console.log(direction)
+                droneClient
+                    .after(1000, function() {
+                    this.back(0.1);
+                }).after(2000, function() {
+                    this.stop();
+                    console.log('SERVER: back finished');
+                    payload.command = command
+                    payload.num = num
+                    socket.write(JSON.stringify(payload));
+                })
+                break;
+                case "right": // forward
+                console.log('SERVER: right received');
+
+                console.log(direction)
+                droneClient
+                    .after(1000, function() {
+                    this.front(0.1);
+                }).after(2000, function() {
+                    this.stop();
+                    console.log('SERVER: right finished');
+                    payload.command = command
+                    payload.num = num
+                    socket.write(JSON.stringify(payload));
+                })
+                break;
+                case "left": // forward
+                console.log('SERVER: left received');
+
+                console.log(direction)
+                droneClient
+                    .after(1000, function() {
+                    this.front(0.1);
+                }).after(2000, function() {
+                    this.stop();
+                    console.log('SERVER: left finished');
                     payload.command = command
                     payload.num = num
                     socket.write(JSON.stringify(payload));
@@ -206,8 +251,8 @@ var server = net.createServer(function(socket) {
 
                 droneClient
                     .after(1000, function() {
-                    this.clockwise(0.3);
-                }).after(1250, function() {
+                    this.clockwise(0.1);
+                }).after(6000, function() {
                     this.stop();
                 })
 
@@ -223,14 +268,14 @@ var server = net.createServer(function(socket) {
 
                 if (!prevTimestamp || prevTimestamp != payload.timestamp) {
                     payload.command = command
-                    payload.num = num
+                    //payload.num = num
                     payload.dataValid = true
                     socket.write(JSON.stringify(payload));
                     prevTimestamp = payload.timestamp
 
                 } else {
                     payload.command = command
-                    payload.num = num
+                    //payload.num = num
                     payload.dataValid = false
                     socket.write(JSON.stringify(payload));
                 }

@@ -26,7 +26,7 @@ counter = 0
 globalState = None
 
 WriteToFile = False
-ReadFromFile = True
+ReadFromFile = False
 ReadFileName = "D:\\School\\fydp\\shit_run3.csv"
 
 # connect to node server
@@ -66,7 +66,7 @@ def writeData(data):
 # Working Flight Test and drone data recieve
 def issueCommand(command):
     global runningCmdNum
-    globalState.busy = True
+    globalState.busy = False
 
     # while (runningCmdNum != 0 and getCmdNum(s.recv(4096)) != runningCmdNum):
     #     pass
@@ -149,8 +149,8 @@ while True:
         payloadJSON = json.loads(raw)
         # if its 'data'...
         if payloadJSON["command"] == "ra":
-            #print(payloadJSON)
-            #writeData(raw)
+            print(payloadJSON)
+            writeData(raw)
             # only count on good data
             counter += 1
 
@@ -177,7 +177,7 @@ while True:
             # lidar3x.append(p[0])
             # lidar3y.append(p[1])
             # if we should then issue the command
-            if command != -1 and not ReadFromFile:
+            if command != -1:
                 issueCommand(command)
         else :
             #handle callbacks TODO: this is fragile as all hell
