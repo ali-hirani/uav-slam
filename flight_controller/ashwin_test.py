@@ -19,7 +19,7 @@ ip = '127.0.0.1'
 port = 1337
 socketToNode = None
 
-runningCmdNum = 0
+runningCmdNum = 10
 #start busy until you connect to drone
 prevTimeStamp = 0
 
@@ -73,8 +73,8 @@ def issueCommand(command):
     # while (runningCmdNum != 0 and getCmdNum(s.recv(4096)) != runningCmdNum):
     #     pass
     runningCmdNum = 10
-    print("issued :  " + command + "," + str(runningCmdNum))
-    socketToNode.sendall(command + "," + str(runningCmdNum))
+    #print("issued :  " + command + "," + str(runningCmdNum))
+    socketToNode.sendall(str(command) + "," + str(runningCmdNum))
 
 
 
@@ -110,7 +110,7 @@ def depthToPoint(drone, sensorIndex, depth):
 # ==== "MAIN" ====
 
 # file writing stuff that we will need later so its still here
-f = csv.writer(open("yolo.csv", "wb+"))
+f = csv.writer(open("square.csv", "wb+"))
 # f.writerow(['timestamp', 'ctrlState', 'flyState', 'a_x', 'a_y', 'a_z', 'g_x', 'g_y', 'g_z', 'front_back_deg', 'left_right_deg', 'clockwise_deg', 'x_v', 'y_v', 'z_v' ])
 f.writerow(['fuck you', 'dt', 'vx', 'vy', 'yaw', 'dx', 'dy', 'x,' 'y'])
 
@@ -148,6 +148,7 @@ while True:
         else:
             # blocking receive - if we dont have data and we already processed the last packet then we good
             raw = socketToNode.recv(4096)
+        #load json data from node
         payloadJSON = json.loads(raw)
         # if its 'data'...
         if payloadJSON["command"] == "ra":
@@ -171,7 +172,7 @@ while True:
             p = depthToPoint(globalState, 0, globalState.depths[0])
             lidar1x.append(p[0])
             lidar1y.append(p[1])
-            print("dt: "+str(globalState.dt))
+            #print("dt: "+str(globalState.dt))
             # p = depthToPoint(globalState, 1, globalState.depths[1])
             # lidar2x.append(p[0])
             # lidar2y.append(p[1])

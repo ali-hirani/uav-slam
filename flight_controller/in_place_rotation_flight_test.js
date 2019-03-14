@@ -8,11 +8,11 @@ client.on('navdata', console.log);
 
 client.takeoff(function () {
 	client
-	  .after(2000, function() {
+	  .after(4000, function() {
 	  	console.log("clockwise rotation");
 	    this.clockwise(0.1);
 	  })
-	  .after(5000, function() {
+	  .after(10000, function() {
 	  	console.log("stop");
 	  	this.stop();
 	  })

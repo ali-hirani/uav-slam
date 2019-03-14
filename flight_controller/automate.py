@@ -1,8 +1,8 @@
 import sys
 import telnetlib
 from wireless import Wireless
-import subprocess
 import time
+import os
 def drone_connect():
         
     print "connecting to drone..."
@@ -54,16 +54,13 @@ def raspi_telnet():
 
 def node_testServer():
     print "running node testServer.js...."
-    subprocess.call("killall -KILL node", shell=True)
-    #subprocess.call("killall -KILL python", shell=True)
-    subprocess.call("node testServer.js")
+    os.system("killall -KILL node")
+    #os.system("killall -KILL python", )
+    os.system("gnome-terminal -- node testServer.js")
 
 def run_python():
     print "running mian python file...."
-    subprocess.call("python ashwin_test.py", shell=True)
-
-
-    
+    os.system("gnome-terminal -- python ashwin_test.py")
 
 
 #drone_connect()

@@ -34,18 +34,16 @@ def planFlight(state, counter):
     # if state.busy :
     #     return -1
     
-
     if not state.busy:
 
     	if counter == 1:
        	    return "to"
 
-        if counter - state.after_counter == 5000:
-            return "rl"
+        #if counter - state.after_counter == 1000:
+            #return "rl"
             #direction = check_collision(state.depths, 45)
             #return direction
 
 
-
     else:
-        return -1
+        return -1 

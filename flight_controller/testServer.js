@@ -252,7 +252,7 @@ var server = net.createServer(function(socket) {
                 droneClient
                     .after(1000, function() {
                     this.clockwise(0.1);
-                }).after(6000, function() {
+                }).after(2000, function() {
                     this.stop();
                 })
 
