@@ -10,8 +10,9 @@ from plot_data import DataPlot, RealtimePlot
 import state
 import EKF
 import flightPlanner
-import sys 
+import sys
 import os
+import cv2
 
 #========== GLOBALS =============
 # Drone/Node server
@@ -28,8 +29,8 @@ counter = 0
 globalState = None
 
 WriteToFile = False
-ReadFromFile = False
-ReadFileName = "D:\\School\\fydp\\shit_run3.csv"
+ReadFromFile = True
+ReadFileName = "D:\\School\\fydp\\fresh_run1.csv"
 
 # connect to node server
 # will block until connection confirmation received
@@ -136,7 +137,8 @@ if ReadFromFile:
     reader = csv.reader(open(ReadFileName))
 else:
     connectToNodeServer(ip, port)
-
+#plt.ion() # enable real-time plotting
+plt.figure(1) # create a plot
 while True:
     try:
         if ReadFromFile:
@@ -162,23 +164,82 @@ while True:
             command = flightPlanner.planFlight(globalState, counter)
             x.append(globalState.x)
             y.append(globalState.y)
-            if counter%60 == 0:
+            if counter%200 == 0:
                 startx.append(globalState.x)
                 starty.append(globalState.y)
-                dirx.append(math.cos(globalState.yaw)*0.02)
-                diry.append(math.sin(globalState.yaw)*0.02)
+                dirx.append(math.cos(globalState.yaw)*0.05)
+                diry.append(math.sin(globalState.yaw)*0.05)
 
-            p = depthToPoint(globalState, 0, globalState.depths[0])
-            lidar1x.append(p[0])
-            lidar1y.append(p[1])
-            print("dt: "+str(globalState.dt))
-            # p = depthToPoint(globalState, 1, globalState.depths[1])
-            # lidar2x.append(p[0])
-            # lidar2y.append(p[1])
-            # p = depthToPoint(globalState, 2, globalState.depths[2])
-            # lidar3x.append(p[0])
-            # lidar3y.append(p[1])
-            # if we should then issue the command
+            #print("dt: "+str(globalState.dt))
+            if globalState.depths[0] < 12:
+                p = depthToPoint(globalState, 0, globalState.depths[0])
+                lidar1x.append(p[0])
+                lidar1y.append(p[1])
+            else:
+                lidar1x.append(0)
+                lidar1y.append(0)
+            if globalState.depths[1] < 12:
+                p = depthToPoint(globalState, 1, globalState.depths[1])
+                lidar2x.append(p[0])
+                lidar2y.append(p[1])
+            else:
+                lidar2x.append(0)
+                lidar2y.append(0)
+            if globalState.depths[2] < 12:
+                p = depthToPoint(globalState, 2, globalState.depths[2])
+                lidar3x.append(p[0])
+                lidar3y.append(p[1])
+            else:
+                lidar3x.append(0)
+                lidar3y.append(0)
+            globalState.occGrid.updateGrid(globalState, 0)
+            globalState.occGrid.updateGrid(globalState, 1)
+            globalState.occGrid.updateGrid(globalState, 2)
+
+            img = np.array(globalState.occGrid.grid * 255, dtype = np.uint8)
+            #cv2.imshow("image1", img);
+            ret,thresh1 = cv2.threshold(img,220,255,cv2.THRESH_BINARY)
+
+            ret,thresh2 = cv2.threshold(img,255,255,cv2.THRESH_BINARY)
+            minLineLength = 3
+            maxLineGap = 2
+            lines = cv2.HoughLinesP(thresh1,1,np.pi/180,10, minLineLength=minLineLength, maxLineGap = maxLineGap)
+            globalState.lines = lines
+            if type(lines) is np.ndarray:
+                #print(len(lines))
+                #print(lines)
+                for line in lines:
+
+                    x1, y1, x2, y2 = line[0]
+
+                    cv2.line(thresh2,(x1,y1),(x2,y2),(255,0,0),1)
+                
+
+            if counter %200 == 0:
+                plt.clf()
+                #plot1
+                plt.subplot(221)
+                plt.plot(x,  y, label="posX")
+                for i in range(0, len(startx)):
+                    plt.arrow(startx[i], starty[i], dirx[i], diry[i],  head_width=0.05, head_length=0.01, fc='k', ec='k', width=0.0001)
+                plt.scatter(lidar1x,  lidar1y, color="red", s = 0.001)
+                plt.scatter(lidar2x,  lidar2y, color="green", s = 0.001)
+                plt.scatter(lidar3x,  lidar3y, color="blue", s = 0.001)
+                plt.grid()
+
+                #plt2
+                plt.subplot(222)
+                plt.imshow(globalState.occGrid.grid, 'Greys')
+
+                #plt3
+                plt.subplot(223)
+                plt.imshow(thresh1)
+                #plt4
+                plt.subplot(224)
+                plt.imshow(thresh2)
+
+                plt.pause(0.1)
+            #if we should then issue the command
             if command != -1:
                 issueCommand(command)
         else :
@@ -196,15 +257,22 @@ while True:
     	print(exc_type, fname, exc_tb.tb_lineno)
         pass
 
-fig, axarr = plt.subplots(1, sharex=True)
-axarr.plot(x,  y, label="posX")
-for i in range(0, len(dirx)):
-    axarr.arrow(startx[i], starty[i], dirx[i], diry[i],  head_width=0.005, head_length=0.01, fc='k', ec='k', width=0.0001)
-axarr.plot(lidar1x,  lidar1y, color="red")
-# axarr.plot(lidar2x,  lidar2y, color="red")
-# axarr.plot(lidar3x,  lidar3y, color="red")
+
+# plt.show()
+# plt.ion() # enable real-time plotting
+# plt.figure(1) # create a plot
+# for j in range(0, len(dirx)):
+#     plt.clf()
+#     plt.plot(x[:j*200],  y[:j*200], label="posX")
+#     for i in range(0, j):
+#         plt.arrow(startx[i], starty[i], dirx[i], diry[i],  head_width=0.05, head_length=0.01, fc='k', ec='k', width=0.0001)
+#     plt.scatter(lidar1x[:j*200],  lidar1y[:j*200], color="red", s = 0.001)
+#     plt.scatter(lidar2x[:j*200],  lidar2y[:j*200], color="green", s = 0.001)
+#     plt.scatter(lidar3x[:j*200],  lidar3y[:j*200], color="blue", s = 0.001)
+#
+#     plt.grid()
+#     plt.pause(1)
 
 
-plt.show()
-
-socketToNode.close()
+if not ReadFromFile:
+    socketToNode.close()
