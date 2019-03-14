@@ -29,12 +29,17 @@ class OccGrid:
         x = int(round((point[0]+self.mToCover/2)/self.cellSizeInM))
         y = int(round((point[1]+self.mToCover/2)/self.cellSizeInM))
         return [x,y]
+
+    def getPoint(self, indexes):
+        y = (indexes[0] * self.cellSizeInM) - self.mToCover/2
+        x = (indexes[1] * self.cellSizeInM) - self.mToCover/2
+        return [x,y]
     def updateCell(self,cellIndex, value):
         if cellIndex[0] < 0 or cellIndex[0] >= self.gridSize:
-            print("fuck u x")
+            #print("fuck u x")
             return
         if cellIndex[1] < 0 or cellIndex[1] >= self.gridSize:
-            print("fuck u y")
+            #print("fuck u y")
             return
         self.grid[cellIndex[0]][cellIndex[1]] = np.clip(self.grid[cellIndex[0]][cellIndex[1]] + value, 0,1)
 
@@ -42,7 +47,7 @@ class OccGrid:
         curDepth = state.depths[sensorIndex]
         # we have a "hit"
         if curDepth < 12:
-            p1 = [curDepth * math.cos(EKF.wraptopi(state.yaw + state.sensors[sensorIndex].angle)), curDepth * math.sin(EKF.wraptopi(state.yaw + state.sensors[sensorIndex].angle))]
+            p1 = [curDepth * math.cos(state.yaw + state.sensors[sensorIndex].angle), curDepth * math.sin(state.yaw + state.sensors[sensorIndex].angle)]
             p2 = [state.x + p1[0], state.y+ p1[1]]
             cell = self.getCell(p2)
             self.updateCell(cell, 0.02)
@@ -99,4 +104,4 @@ class State:
         # csv file handle?
 
         #EKF
-        self.P = np.eye(3)
+        self.P = np.eye(3)*0.001

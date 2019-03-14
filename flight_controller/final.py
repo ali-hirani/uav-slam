@@ -53,8 +53,7 @@ def initState():
     s1 = state.Sensor([0.,0.],3 * math.pi/2)
     s2 = state.Sensor([0.,0.], math.pi)
     s3 = state.Sensor([0.,0.], math.pi/2)
-    s4 = state.Sensor([0.,0.], 0)
-    globalState = state.State([s1,s2,s3,s4])
+    globalState = state.State([s1,s2,s3])
     globalState.busy = True
 
 
@@ -204,16 +203,20 @@ while True:
             minLineLength = 3
             maxLineGap = 2
             lines = cv2.HoughLinesP(thresh1,1,np.pi/180,10, minLineLength=minLineLength, maxLineGap = maxLineGap)
-            globalState.lines = lines
+
+            linesToAdd = []
             if type(lines) is np.ndarray:
                 #print(len(lines))
                 #print(lines)
                 for line in lines:
 
                     x1, y1, x2, y2 = line[0]
+                    p1 = globalState.occGrid.getPoint([x1,y1])
+                    p2  = globalState.occGrid.getPoint([x2,y2])
 
+                    linesToAdd.append([p1[0], p1[1], p2[0], p2[1]])
                     cv2.line(thresh2,(x1,y1),(x2,y2),(255,0,0),1)
-                
+            globalState.lines = np.array(linesToAdd)
 
             if counter %200 == 0:
                 plt.clf()
@@ -222,9 +225,11 @@ while True:
                 plt.plot(x,  y, label="posX")
                 for i in range(0, len(startx)):
                     plt.arrow(startx[i], starty[i], dirx[i], diry[i],  head_width=0.05, head_length=0.01, fc='k', ec='k', width=0.0001)
-                plt.scatter(lidar1x,  lidar1y, color="red", s = 0.001)
-                plt.scatter(lidar2x,  lidar2y, color="green", s = 0.001)
-                plt.scatter(lidar3x,  lidar3y, color="blue", s = 0.001)
+                plt.scatter(lidar1x[counter-10:],  lidar1y[counter-10:], color="red", s = 0.001)
+                plt.scatter(lidar2x[counter-10:],  lidar2y[counter-10:], color="green", s = 0.001)
+                plt.scatter(lidar3x[counter-10:],  lidar3y[counter-10:], color="blue", s = 0.001)
+                for line in globalState.lines:
+                    plt.plot([line[0],line[2]], [line[1], line[3]])
                 plt.grid()
 
                 #plt2
@@ -252,11 +257,12 @@ while True:
 
     except Exception as e:
         print("Main loop encountered a problem: " + str(e))
-	exc_type, exc_obj, exc_tb = sys.exc_info()
+        exc_type, exc_obj, exc_tb = sys.exc_info()
     	fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
     	print(exc_type, fname, exc_tb.tb_lineno)
+        print(raw)
         pass
-
+plt.show()
 
 # plt.show()
 # plt.ion() # enable real-time plotting
