@@ -34,7 +34,7 @@ class State:
         self.vy = 0
         self.yaw = 0
         # depths index should match up with index in sensors array
-        self.depths = []
+        self.depths = [0,0,0]
 
         # ==== predicted state ====
         self.x = 0

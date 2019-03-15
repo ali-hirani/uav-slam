@@ -3,53 +3,25 @@ import socket
 import threading
 import struct
 import time
+from threading import Thread
 
-
-#initialize drone
-drone = ARDrone.Drone()
-drone.startup()
-drone.reset()
-time.sleep(1)
-drone.trim()
-drone.useDemoMode(True)
-drone.getNDpackage(["demo"])
-is_drone_flying = drone.NavData["demo"][0][2]
 #print "is drone flying: " + str(is_drone_flying)
 #print "timestamp: " + str(drone.NavDataTimeStamp)
 #print "included packages: " + str(drone.NavData.keys())
 #print "state: " + str(drone.State)
 #print "demo-data: " + str(drone.NavData["demo"])
 
-#SOCKET FROM PI TO LAPTOP ----- START
-TCP_IP = "192.168.43.61"
-TCP_PORT = 5005
-#sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#sock.connect((TCP_IP, TCP_PORT))
+def initDrone(drone):
+    drone = ARDrone.Drone()
+    drone.startup()
+    drone.reset()
+    time.sleep(1)
+    drone.trim()
+    drone.useDemoMode(True)
+    drone.getNDpackage(["demo"])
+    is_drone_flying = drone.NavData["demo"][0][2]
 
-
-def collect_packet(sock, size):
-    data = b''
-    while len(data) < size:
-        packet = sock.recv(size - len(data))
-        if not packet:
-            return None
-
-        data = data + packet
-
-    return data
-
-def decode_data(sock):
-    #first get the length of packet from first 4 bytes
-    packet_length_bytes = collect_packet(sock , 4)
-    if not packet_length_bytes:
-        return None
-
-    packet_length = struct.unpack('>I', packet_length_bytes)[0]
-
-    encoded_data = collect_packet(sock, packet_length)
-    pair = (encoded_data[0], encoded_data[1:])
-
-    return pair
+    return drone
 
 #SOCKET FROM PI TO LAPTOP -- END
 #DRONE CONTROL --- START
@@ -71,11 +43,15 @@ def package_drone_data():
     velocity_x = velocity[0]
     velocity_y = velocity[1]
     velocity_z = velocity[2]
-    theta = angles[0]
-    phi = angles[1]
-    psi = angles[2]
+    pitch = angles[0]
+    roll = angles[1]
+    yaw = angles[2]
 
 def takeoff():
+    global global_busy
+    
+    print("takeoff begin")
+    global_busy = True
     print "doing trim + self rotation"
     drone.getSelfRotation(5)
     print("self-rotation_value:  " + str(drone.selfRotation))
@@ -86,6 +62,9 @@ def takeoff():
     drone.takeoff()
     #wait till drone is actually flying
     time.sleep(5)
+
+    global_busy = False
+    print("takeoff end")
 
 def do_square():
     counter = 1
@@ -113,6 +92,9 @@ def do_square_angled():
         counter += 1
 
 def move_drone(direction,speed, period):
+    global global_busy
+    
+    global_busy = True
     
     if direction == "front":
         print "moving forward"
@@ -143,9 +125,14 @@ def move_drone(direction,speed, period):
         drone.stop()
         time.sleep(2)
 
+    global_busy = False
+ 
 
 #do 360 deg rotation in 8 steps
 def do_rotation():
+    global global_busy
+
+    global_busy = True
     counter = 1
     while counter <= 8:
         drone.hover()
@@ -154,17 +141,30 @@ def do_rotation():
         drone.hover()
         time.sleep(2)
         counter += 1
+    global_busy = False
 
-takeoff()
+def helloWorld(arg):
+    for x in xrange(1,100):
+        print("fuck you" + str(arg))
+
+# thread = Thread(target = takeoff)
+# thread.start()
+
+# while (global_busy) :
+#     print("busy")
+#     pass
+
+# thread = Thread(target = drone.land())
+# thread.start()
+
+
 #move_drone("right", 0.1, 1)
 #kjjjhhdo_rotation()
 #do_square_angled()
 #do_square()
-do_rotation()
-drone.land()
+# do_rotation()
+# drone.land()
 
-#SOCK FROM PI 
-#encoded_data = decode_data(sock)
 #(sensor_id, distance) = encoded_data
 #print("sensor_id: ", sensor_id)
 #print("distance: ", distance)
