@@ -18,6 +18,8 @@ def initDrone(drone):
     time.sleep(1)
     drone.trim()
     drone.useDemoMode(False)
+    # **FIX ME: Get time working
+    # drone.getNDpackage(["demo","time"])
     drone.getNDpackage(["demo"])
     is_drone_flying = drone.NavData["demo"][0][2]
 
@@ -56,22 +58,6 @@ def do_square():
         move_drone("back", 0.1, 1)
         move_drone("right", 0.1, 2)
         counter += 1
-
-def do_square_angled():
-    counter = 1
-    while counter <= 4:
-        drone.hover()
-        time.sleep(0.5)
-        drone.moveForward(0.1)
-        time.sleep(1)
-        drone.stop()
-        time.sleep(0.5)
-        drone.turnAngle(-90, 1, 10)
-        time.sleep(0.5)
-        drone.hover()
-        time.sleep(2)
-        counter += 1
-    drone.land()
 
 # thread = Thread(target = takeoff)
 # thread.start()

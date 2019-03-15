@@ -37,21 +37,17 @@ def planFlight(state, counter):
     # if state.busy :
     #     return -1
 
-    print("State Busy: ", state.busy)
-    print("Counter: ", counter)
+    # print("State Busy: ", state.busy)
+    # print("Counter: ", counter)
     
     if not state.busy:
     	# if counter == 1:
      #   	    return "takeoff"
-
-        # if counter >= 500 and not isSquareRun:
-        #     isSquareRun = True
-        #     return "front"
-
-        # if isSquareRun:
-        #     return "land"
-
-        # else:
+            
+     #    if counter >= 500 and not isSquareRun:
+     #        isSquareRun = True
+     #        return "do_rotation"
+     #    else:
             return -1
 
         #if counter - state.after_counter == 1000:

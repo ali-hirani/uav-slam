@@ -103,10 +103,7 @@ def issueCommand(command):
     elif command == "right":
         thread = Thread(target = move_drone, args = ["right", 0.1, 1])
         thread.start()
-    elif command == "rotate_cw":
-        thread = Thread(target = do_rotation)
-        thread.start()
-    elif command == "rotate_ccw":
+    elif command == "do_rotation":
         thread = Thread(target = do_rotation)
         thread.start()
     elif command == "land":
@@ -219,10 +216,11 @@ def do_rotation():
     while counter <= 8:
         drone.hover()
         time.sleep(0.5)
-        drone.turnAngle(-45, 1, 1)
+        drone.turnAngle(-45, 1, 2)
         drone.hover()
         time.sleep(2)
         counter += 1
+    drone.land() 
     globalState.busy = False
 
 def do_square_angled():
@@ -296,27 +294,32 @@ while True:
                 pass
 
             ndc = drone.NavDataCount
+            print("NDC: " + str(ndc))
             velocity = drone.NavData["demo"][4]
             angles = drone.NavData["demo"][2]
 
             # basically if state isnt valid it just means its the first run through and we dont have time
             if not globalState.valid :
-                globalState.time = float(drone.NavDataTimeStamp) / 1000 # to seconds
-
-                globalState.vx = float(velocity[0]) / 1000 # convert to m/s
-                globalState.vy = float(velocity[1]) / 1000 # convert to m/s
-                globalState.yaw = float(angles[2]) *  math.pi / 180
+                globalState.time = float(drone.NavDataTimeStamp) # to seconds
+                # globalState.time = drone.NavData["time"] # to seconds
+                globalState.vx = float(velocity[0]) / 100 # convert to m/s
+                globalState.vy = float(velocity[1]) / 100 # convert to m/s
+                globalState.yaw = float(angles[2]) *  (math.pi / 180)
                 # globalState.yaw = wraptopi(globalState.yaw)
 
                 globalState.valid = True
                 continue
 
             # update measurment state:
-            globalState.dt = (float(drone.NavDataTimeStamp) / 1000) - globalState.time
-            globalState.time = float(drone.NavDataTimeStamp) / 1000 # to seconds
-            globalState.vx = float(velocity[0]) / 1000 # convert to m/s
-            globalState.vy = float(velocity[1]) / 1000 # convert to m/s
-            globalState.yaw = float(angles[2]) *  math.pi / 180
+            # print("NavDataTimeStamp: " + str(float(drone.NavDataTimeStamp)))
+            # print("NavDataDecodingTime: " + str(float(drone.NavDataDecodingTime)))
+            globalState.dt = (float(drone.NavDataTimeStamp)) - globalState.time
+            print("Dt: ", globalState.dt)
+
+            globalState.time = float(drone.NavDataTimeStamp) # to seconds
+            globalState.vx = float(velocity[0]) / 100 # convert to m/s
+            globalState.vy = float(velocity[1]) / 100 # convert to m/s
+            globalState.yaw = float(angles[2]) *  (math.pi / 180)
         
         # print("dt" + str(globalState.dt))
         # print("time" + str(globalState.time))
@@ -334,13 +337,15 @@ while True:
         globalState = EKF.processData(globalState)
         # use updated state to figure out what to do
         command = flightPlanner.planFlight(globalState, counter)
+        # print("Global X: ", globalState.x)
+        # print("Global Y: ", globalState.y)
         x.append(globalState.x)
         y.append(globalState.y)
         if counter%200 == 0:
             startx.append(globalState.x)
             starty.append(globalState.y)
-            dirx.append(math.cos(globalState.yaw)*0.05)
-            diry.append(math.sin(globalState.yaw)*0.05)
+            dirx.append(math.cos(globalState.yaw)*0.5)
+            diry.append(math.sin(globalState.yaw)*0.5)
 
         #print("dt: "+str(globalState.dt))
         if globalState.depths[0] < 12:
@@ -391,42 +396,44 @@ while True:
                 cv2.line(thresh2,(x1,y1),(x2,y2),(255,0,0),1)
         globalState.lines = np.array(linesToAdd)
 
-        if counter %200 == 0:
-            plt.clf()
+        # if counter %200 == 0:
+            # plt.clf()
             #plot1
-            plt.subplot(221)
-            plt.plot(x,  y, label="posX")
-            for i in range(0, len(startx)):
-                plt.arrow(startx[i], starty[i], dirx[i], diry[i],  head_width=0.05, head_length=0.01, fc='k', ec='k', width=0.0001)
-            plt.scatter(lidar1x[counter-10:],  lidar1y[counter-10:], color="red", s = 0.001)
-            plt.scatter(lidar2x[counter-10:],  lidar2y[counter-10:], color="green", s = 0.001)
-            plt.scatter(lidar3x[counter-10:],  lidar3y[counter-10:], color="blue", s = 0.001)
-            for line in globalState.lines:
-                plt.plot([line[0],line[2]], [line[1], line[3]])
-            plt.grid()
+            # plt.subplot(221)
+            # plt.plot(x,  y, label="posX")
+            # for i in range(0, len(startx)):
+            #     plt.arrow(startx[i], starty[i], dirx[i], diry[i],  head_width=0.05, head_length=0.01, fc='k', ec='k', width=0.0001)
+            # print(len(lidar1x))
+            # plt.scatter(lidar1x,  lidar1y, color="red", s = 0.01)
+            # plt.scatter(lidar2x,  lidar2y, color="green", s = 0.01)
+            # plt.scatter(lidar3x,  lidar3y, color="blue", s = 0.01)
+            # for line in globalState.lines:
+            #     plt.plot([line[0],line[2]], [line[1], line[3]])
+            # plt.grid()
 
-            #plt2
-            plt.subplot(222)
-            plt.imshow(globalState.occGrid.grid, 'Greys')
+            # #plt2
+            # plt.subplot(222)
+            # plt.imshow(globalState.occGrid.grid, 'Greys')
 
-            #plt3
-            plt.subplot(223)
-            plt.imshow(thresh1)
-            #plt4
-            plt.subplot(224)
-            plt.imshow(thresh2)
+            # #plt3
+            # plt.subplot(223)
+            # plt.imshow(thresh1)
+            # #plt4
+            # plt.subplot(224)
+            # plt.imshow(thresh2)
 
-            plt.pause(0.1)
+            # plt.pause(0.1)
         
         #if we should then issue the command
+        # print("issueCommand", counter)
         if command != -1:
-            issueCommand(command)
+            pass
+            # issueCommand(command)
     except Exception as e:
         print("Main loop encountered a problem: " + str(e))
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         print(exc_type, fname, exc_tb.tb_lineno)
-        print(raw)
         pass
 
 fig, axarr = plt.subplots(1, sharex=True)
