@@ -4,36 +4,12 @@ import json
 import numpy as np
 
 # acceept a json object and state, and return a new state object
-def processData(jsonPayload, curState):
-
-    # basically if state isnt valid it just means its the first run through and we dont have time
-    if not curState.valid :
-        curState.time = (float(jsonPayload['timestamp']) / 1000) # to seconds
-        curState.vx = float(jsonPayload['xVelocity']) / 1000 # convert to m/s
-        curState.vy = float(jsonPayload['yVelocity']) / 1000 # convert to m/s
-        curState.yaw = float(jsonPayload['clockwiseDegrees']) *  math.pi / 180
-        curState.yaw = wraptopi(curState.yaw)
-
-
-        curState.depths = [float(jsonPayload['lidar1'])/100, float(jsonPayload['lidar2'])/100, float(jsonPayload['lidar3'])/100, float(jsonPayload['lidar4'])/100]
-
-        curState.valid = True
-        return curState
-
-
-    # update measurment state:
-    curState.dt = (float(jsonPayload['timestamp']) / 1000) - curState.time
-    curState.time = (float(jsonPayload['timestamp']) / 1000) # to seconds
-    curState.vx = float(jsonPayload['xVelocity']) / 1000 # convert to m/s
-    curState.vy = float(jsonPayload['yVelocity']) / 1000 # convert to m/s
-    curState.yaw = float(jsonPayload['clockwiseDegrees']) *  math.pi / 180;
-
+def processData(curState):
     #state = ...
     curState = efkPredict(curState)
     curState = efkUpdate(curState)
 
     return curState
-
 
 def efkPredict(state):
     dx = state.vx * state.dt

@@ -24,8 +24,8 @@ import struct
 drone = None
 counter = 0
 globalState = None
-ReadFromFile = False
-ReadFileName = "D:\\School\\fydp\\shit_run3.csv"
+ReadFromFile = True
+ReadFileName = "/Users/ali/4A/FYDP/uav-slam/flight_controller/fuck_me1.csv"
 ndc = -1
 sockPi = None
 
@@ -42,8 +42,6 @@ def connect():
     sockPi.connect((TCP_IP, TCP_PORT))
     
     drone = pythonFlight.initDrone(drone)
-    
-    initState()
 
 def collect_packet(size):
     global sockPi
@@ -74,22 +72,46 @@ def decode_data():
 # initialize state - basically just set up the sensors
 def initState():
     global globalState
-    s1 = state.Sensor([0.,0.],3 * math.pi/2)
-    s2 = state.Sensor([0.,0.], math.pi)
-    s3 = state.Sensor([0.,0.], math.pi/2)
-    s4 = state.Sensor([0.,0.], 0)
-    globalState = state.State([s1,s2,s3,s4])
-    globalState.busy = True
+    s1 = state.Sensor([0.,0.], 0)
+    s2 = state.Sensor([0.,0.], math.pi/2)
+    s3 = state.Sensor([0.,0.], -math.pi/2)
+    globalState = state.State([s1,s2,s3])
+    globalState.busy = False
     lidarThread = Thread(target = getLidar)
     lidarThread.start()
 
 def writeData():
     global globalState
-    f.writerow([globalState.dt, globalState.time, globalState.vx, globalState.vy, globalState.yaw, globalState.yaw])
+    f.writerow([globalState.dt, globalState.time, globalState.vx, globalState.vy, globalState.yaw, globalState.depths[0], globalState.depths[1], globalState.depths[2]])
 
 # fixme
 def issueCommand(command):
-    globalState.busy = False
+    globalState.busy = True
+
+    if command == "takeoff":
+        thread = Thread(target = takeoff)
+        thread.start()
+    elif command == "forward":
+        thread = Thread(target = move_drone, args = ["front", 0.1, 1])
+        thread.start()
+    elif command == "left":
+        thread = Thread(target = move_drone, args = ["left", 0.1, 1])
+        thread.start()
+    elif command == "back":
+        thread = Thread(target = move_drone, args = ["back", 0.1, 1])
+        thread.start()
+    elif command == "right":
+        thread = Thread(target = move_drone, args = ["right", 0.1, 1])
+        thread.start()
+    elif command == "rotate_cw":
+        thread = Thread(target = do_rotation)
+        thread.start()
+    elif command == "rotate_ccw":
+        thread = Thread(target = do_rotation)
+        thread.start()
+    elif command == "land":
+        thread = Thread(target = drone.land)
+        thread.start()
 
 def rotate(origin, point, angle):
     """
@@ -129,6 +151,77 @@ def getLidar():
         lidarVal = float(encoded_data[1])
         globalState.depths[lidarNum] = lidarVal / 100
 
+def takeoff():
+    global globalState
+    
+    print("takeoff begin")
+    globalState.busy = True
+    print "doing trim + self rotation"
+    drone.getSelfRotation(5)
+    print("self-rotation_value:  " + str(drone.selfRotation))
+    time.sleep(1)
+    drone.setSpeed(0.1)
+    time.sleep(0.1)
+    print "prepare for takeoff"
+    drone.takeoff()
+    #wait till drone is actually flying
+    time.sleep(5)
+
+    globalState.busy = False
+    print("takeoff end")
+
+def move_drone(direction,speed, period):
+    global globalState
+    
+    globalState.busy = True
+    
+    if direction == "front":
+        print "moving forward"
+        drone.moveForward(speed)
+        time.sleep(period)
+        drone.stop()
+        time.sleep(2)
+
+
+    elif direction == "back":
+        print "moving backward"
+        drone.moveBackward(speed)
+        time.sleep(period)
+        drone.stop()
+        time.sleep(2)
+
+    elif direction == "right":
+        print "moving right"
+        drone.moveRight(speed)
+        time.sleep(period)
+        drone.stop()
+        time.sleep(2)
+
+    elif direction == "left":
+        print "moving left"
+        drone.moveLeft(speed)
+        time.sleep(period)
+        drone.stop()
+        time.sleep(2)
+
+    globalState.busy = False
+ 
+
+#do 360 deg rotation in 8 steps
+def do_rotation():
+    global globalState
+
+    globalState.busy = True
+    counter = 1
+    while counter <= 8:
+        drone.hover()
+        time.sleep(0.5)
+        drone.turnAngle(-45, 1, 1)
+        drone.hover()
+        time.sleep(2)
+        counter += 1
+    globalState.busy = False
+
 # ==== "MAIN" ====
 
 # file writing stuff that we will need later so its still here
@@ -149,6 +242,7 @@ lidar2y = []
 lidar3x = []
 lidar3y = []
 
+initState()
 if ReadFromFile:
     reader = csv.reader(open(ReadFileName))
 else:
@@ -158,54 +252,64 @@ while True:
     try:
         if ReadFromFile:
             try:
-                raw = reader.next()[0]
+                raw = reader.next()
             except Exception as e:
                 break
+
+            globalState.dt = float(raw[0])
+            globalState.time = float(raw[1])
+            globalState.vx = float(raw[2])
+            globalState.vy = float(raw[3])
+            globalState.yaw = float(raw[4])
+            globalState.depths[0] = float(raw[5])
+            globalState.depths[1] = float(raw[6])
+            globalState.depths[2] = float(raw[7])
 
         else:
             while ndc == drone.NavDataCount:
                 pass
 
-        ndc = drone.NavDataCount
-        velocity = drone.NavData["demo"][4]
-        angles = drone.NavData["demo"][2]
+            ndc = drone.NavDataCount
+            velocity = drone.NavData["demo"][4]
+            angles = drone.NavData["demo"][2]
 
-        # basically if state isnt valid it just means its the first run through and we dont have time
-        if not globalState.valid :
+            # basically if state isnt valid it just means its the first run through and we dont have time
+            if not globalState.valid :
+                globalState.time = float(drone.NavDataTimeStamp) / 1000 # to seconds
+
+                globalState.vx = float(velocity[0]) / 1000 # convert to m/s
+                globalState.vy = float(velocity[1]) / 1000 # convert to m/s
+                globalState.yaw = float(angles[2]) *  math.pi / 180
+                # globalState.yaw = wraptopi(globalState.yaw)
+
+                globalState.valid = True
+                continue
+
+            # update measurment state:
+            globalState.dt = (float(drone.NavDataTimeStamp) / 1000) - globalState.time
             globalState.time = float(drone.NavDataTimeStamp) / 1000 # to seconds
-
             globalState.vx = float(velocity[0]) / 1000 # convert to m/s
             globalState.vy = float(velocity[1]) / 1000 # convert to m/s
             globalState.yaw = float(angles[2]) *  math.pi / 180
-            # globalState.yaw = wraptopi(globalState.yaw)
+        
 
-            globalState.valid = True
-            continue
 
-        # update measurment state:
-        globalState.dt = (float(drone.NavDataTimeStamp) / 1000) - globalState.time
-        globalState.time = float(drone.NavDataTimeStamp) / 1000 # to seconds
-        globalState.vx = float(velocity[0]) / 1000 # convert to m/s
-        globalState.vy = float(velocity[1]) / 1000 # convert to m/s
-        globalState.yaw = float(angles[2]) *  math.pi / 180
-        # globalState.yaw = wraptopi(globalState.yaw)
-
-        print("dt" + str(globalState.dt))
-        print("time" + str(globalState.time))
-        print("vx" + str(globalState.vx))
-        print("vy" + str(globalState.vy))
-        print("yaw" + str(globalState.yaw))
-        print("yaw" + str(globalState.yaw))
-        print("depths" + str(globalState.depths))
+        # print("dt" + str(globalState.dt))
+        # print("time" + str(globalState.time))
+        # print("vx" + str(globalState.vx))
+        # print("vy" + str(globalState.vy))
+        # print("yaw" + str(globalState.yaw))
+        # print("yaw" + str(globalState.yaw))
+        # print("depths" + str(globalState.depths))
 
         writeData()
         # only count on good data
         counter += 1
 
         # update our idea of where we are and whats around us
-        # globalState = EKF.processData(payloadJSON, globalState)
+        globalState = EKF.processData(globalState)
         # use updated state to figure out what to do
-        # command = flightPlanner.planFlight(globalState, counter)
+        command = flightPlanner.planFlight(globalState, counter)
         x.append(globalState.x)
         y.append(globalState.y)
         if counter%60 == 0:
@@ -217,7 +321,7 @@ while True:
         p = depthToPoint(globalState, 0, globalState.depths[0])
         lidar1x.append(p[0])
         lidar1y.append(p[1])
-        print("dt: "+str(globalState.dt))
+        # print("dt: "+str(globalState.dt))
         # p = depthToPoint(globalState, 1, globalState.depths[1])
         # lidar2x.append(p[0])
         # lidar2y.append(p[1])
@@ -225,8 +329,9 @@ while True:
         # lidar3x.append(p[0])
         # lidar3y.append(p[1])
         # if we should then issue the command
-        # if command != -1:
-        #     issueCommand(command)
+        if command != -1 and not ReadFromFile:
+            print("FUCK LUKE",command)
+            issueCommand(command)
 
     except Exception as e:
         print("Main loop encountered a problem: " + str(e))

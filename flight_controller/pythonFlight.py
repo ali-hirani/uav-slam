@@ -47,25 +47,6 @@ def package_drone_data():
     roll = angles[1]
     yaw = angles[2]
 
-def takeoff():
-    global global_busy
-    
-    print("takeoff begin")
-    global_busy = True
-    print "doing trim + self rotation"
-    drone.getSelfRotation(5)
-    print("self-rotation_value:  " + str(drone.selfRotation))
-    time.sleep(1)
-    drone.setSpeed(0.1)
-    time.sleep(0.1)
-    print "prepare for takeoff"
-    drone.takeoff()
-    #wait till drone is actually flying
-    time.sleep(5)
-
-    global_busy = False
-    print("takeoff end")
-
 def do_square():
     counter = 1
 
@@ -90,62 +71,6 @@ def do_square_angled():
         drone.hover()
         time.sleep(2)
         counter += 1
-
-def move_drone(direction,speed, period):
-    global global_busy
-    
-    global_busy = True
-    
-    if direction == "front":
-        print "moving forward"
-        drone.moveForward(speed)
-        time.sleep(period)
-        drone.stop()
-        time.sleep(2)
-
-
-    elif direction == "back":
-        print "moving backward"
-        drone.moveBackward(speed)
-        time.sleep(period)
-        drone.stop()
-        time.sleep(2)
-
-    elif direction == "right":
-        print "moving right"
-        drone.moveRight(speed)
-        time.sleep(period)
-        drone.stop()
-        time.sleep(2)
-
-    elif direction == "left":
-        print "moving left"
-        drone.moveLeft(speed)
-        time.sleep(period)
-        drone.stop()
-        time.sleep(2)
-
-    global_busy = False
- 
-
-#do 360 deg rotation in 8 steps
-def do_rotation():
-    global global_busy
-
-    global_busy = True
-    counter = 1
-    while counter <= 8:
-        drone.hover()
-        time.sleep(0.5)
-        drone.turnAngle(-45, 1, 1)
-        drone.hover()
-        time.sleep(2)
-        counter += 1
-    global_busy = False
-
-def helloWorld(arg):
-    for x in xrange(1,100):
-        print("fuck you" + str(arg))
 
 # thread = Thread(target = takeoff)
 # thread.start()
