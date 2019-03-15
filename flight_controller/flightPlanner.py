@@ -1,5 +1,7 @@
 import state
 
+isSquareRun = False
+
 #checks if something is closer than "proximity". returns the direction with enough space
 def check_collision(sensor_dist_list,  proximity):
     #convert list to ints
@@ -29,19 +31,27 @@ def check_collision(sensor_dist_list,  proximity):
 
 # accept state - return two letter command or None
 def planFlight(state, counter):
+    global isSquareRun
     
     # for example:
     # if state.busy :
     #     return -1
+
+    print("State Busy: ", state.busy)
+    print("Counter: ", counter)
     
     if not state.busy:
-    	if counter == 1:
-       	    return "takeoff"
+    	# if counter == 1:
+     #   	    return "takeoff"
 
-        if counter > 1000:
-            return "land"
+        # if counter >= 500 and not isSquareRun:
+        #     isSquareRun = True
+        #     return "front"
 
-        else:
+        # if isSquareRun:
+        #     return "land"
+
+        # else:
             return -1
 
         #if counter - state.after_counter == 1000:

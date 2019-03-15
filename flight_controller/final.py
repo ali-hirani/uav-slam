@@ -25,7 +25,7 @@ drone = None
 counter = 0
 globalState = None
 ReadFromFile = True
-ReadFileName = "/Users/ali/4A/FYDP/uav-slam/flight_controller/fuck_me1.csv"
+ReadFileName = "/Users/ali/4A/FYDP/uav-slam/flight_controller/data/test_run1552638067.09.csv"
 ndc = -1
 sockPi = None
 
@@ -42,6 +42,9 @@ def connect():
     sockPi.connect((TCP_IP, TCP_PORT))
     
     drone = pythonFlight.initDrone(drone)
+
+    lidarThread = Thread(target = getLidar)
+    lidarThread.start()
 
 def collect_packet(size):
     global sockPi
@@ -77,8 +80,6 @@ def initState():
     s3 = state.Sensor([0.,0.], -math.pi/2)
     globalState = state.State([s1,s2,s3])
     globalState.busy = False
-    lidarThread = Thread(target = getLidar)
-    lidarThread.start()
 
 def writeData():
     global globalState
@@ -91,8 +92,8 @@ def issueCommand(command):
     if command == "takeoff":
         thread = Thread(target = takeoff)
         thread.start()
-    elif command == "forward":
-        thread = Thread(target = move_drone, args = ["front", 0.1, 1])
+    elif command == "front":
+        thread = Thread(target = move_drone, args = ["front", 0.1, 5])
         thread.start()
     elif command == "left":
         thread = Thread(target = move_drone, args = ["left", 0.1, 1])
@@ -111,6 +112,9 @@ def issueCommand(command):
         thread.start()
     elif command == "land":
         thread = Thread(target = drone.land)
+        thread.start()
+    elif command == "square_angled":
+        thread = Thread(target = do_square_angled)
         thread.start()
 
 def rotate(origin, point, angle):
@@ -222,10 +226,32 @@ def do_rotation():
         counter += 1
     globalState.busy = False
 
+def do_square_angled():
+    global globalState
+    
+    globalState.busy = True
+    counter = 1
+    while counter <= 4:
+        drone.hover()
+        time.sleep(0.5)
+        drone.moveForward(0.1)
+        time.sleep(1)
+        drone.stop()
+        time.sleep(0.5)
+        drone.turnAngle(-90, 1, 10)
+        time.sleep(0.5)
+        drone.hover()
+        time.sleep(2)
+        counter += 1
+    drone.land()
+    globalState.busy = False
+
+
 # ==== "MAIN" ====
 
 # file writing stuff that we will need later so its still here
-f = csv.writer(open("yolo.csv", "wb+"))
+fileName = "data/test_run" + str(time.time()) + ".csv"
+f = csv.writer(open(fileName, "wb+"))
 
 x = []
 y = []
@@ -292,8 +318,6 @@ while True:
             globalState.vy = float(velocity[1]) / 1000 # convert to m/s
             globalState.yaw = float(angles[2]) *  math.pi / 180
         
-
-
         # print("dt" + str(globalState.dt))
         # print("time" + str(globalState.time))
         # print("vx" + str(globalState.vx))
@@ -305,6 +329,7 @@ while True:
         writeData()
         # only count on good data
         counter += 1
+        print(counter)
 
         # update our idea of where we are and whats around us
         globalState = EKF.processData(globalState)
@@ -321,13 +346,13 @@ while True:
         p = depthToPoint(globalState, 0, globalState.depths[0])
         lidar1x.append(p[0])
         lidar1y.append(p[1])
-        # print("dt: "+str(globalState.dt))
-        # p = depthToPoint(globalState, 1, globalState.depths[1])
-        # lidar2x.append(p[0])
-        # lidar2y.append(p[1])
-        # p = depthToPoint(globalState, 2, globalState.depths[2])
-        # lidar3x.append(p[0])
-        # lidar3y.append(p[1])
+        print("dt: "+str(globalState.dt))
+        p = depthToPoint(globalState, 1, globalState.depths[1])
+        lidar2x.append(p[0])
+        lidar2y.append(p[1])
+        p = depthToPoint(globalState, 2, globalState.depths[2])
+        lidar3x.append(p[0])
+        lidar3y.append(p[1])
         # if we should then issue the command
         if command != -1 and not ReadFromFile:
             print("FUCK LUKE",command)

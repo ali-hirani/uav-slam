@@ -30,7 +30,7 @@ def network_connect():
 def raspi_telnet():
     
     print "telnetting into raspi...."
-    HOST="192.168.43.242"
+    HOST="192.168.43.61"
     tn = telnetlib.Telnet(HOST)
     user = "pi"
     password = "testing123"
@@ -51,7 +51,7 @@ def raspi_telnet():
     tn.write("exit\n")
     print tn.read_all()
 
-drone_connect()
+# drone_connect()
 network_connect()
 raspi_telnet()
 

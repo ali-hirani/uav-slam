@@ -17,7 +17,7 @@ def initDrone(drone):
     drone.reset()
     time.sleep(1)
     drone.trim()
-    drone.useDemoMode(True)
+    drone.useDemoMode(False)
     drone.getNDpackage(["demo"])
     is_drone_flying = drone.NavData["demo"][0][2]
 
@@ -71,6 +71,7 @@ def do_square_angled():
         drone.hover()
         time.sleep(2)
         counter += 1
+    drone.land()
 
 # thread = Thread(target = takeoff)
 # thread.start()
