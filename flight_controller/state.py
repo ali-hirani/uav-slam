@@ -47,21 +47,21 @@ class OccGrid:
         curDepth = state.depths[sensorIndex]
         # we have a "hit"
         if curDepth < 12:
-            p1 = [curDepth * math.cos(state.yaw + state.sensors[sensorIndex].angle), curDepth * math.sin(state.yaw + state.sensors[sensorIndex].angle)]
+            p1 = [curDepth * math.cos(EKF.wraptopi(state.yaw + state.sensors[sensorIndex].angle)), curDepth * math.sin(EKF.wraptopi(state.yaw + state.sensors[sensorIndex].angle))]
             p2 = [state.x + p1[0], state.y+ p1[1]]
             cell = self.getCell(p2)
-            self.updateCell(cell, 0.02)
-            curDepth -= self.cellSizeInM
+            self.updateCell(cell, 0.03)
+            curDepth -= self.cellSizeInM/1.5
         lastCell = None
         while curDepth > 0.3:
-            p1 = [curDepth * math.cos(state.yaw + state.sensors[sensorIndex].angle), curDepth * math.sin(state.yaw + state.sensors[sensorIndex].angle)]
+            p1 = [curDepth * math.cos(EKF.wraptopi(state.yaw + state.sensors[sensorIndex].angle)), curDepth * math.sin(EKF.wraptopi(state.yaw + state.sensors[sensorIndex].angle))]
             p2 = [state.x + p1[0], state.y+ p1[1]]
             cell = self.getCell(p2)
             if lastCell != None and lastCell != cell:
-                self.updateCell(cell, -0.005)
+                self.updateCell(cell, -0.01)
 
             lastCell = cell
-            curDepth -= self.cellSizeInM
+            curDepth -= self.cellSizeInM/1.5
 
 
 
@@ -93,7 +93,7 @@ class State:
         # do we need this?
         self.predictedYaw = 0
         self.lines = []
-        self.occGrid = OccGrid(0.1, 20)
+        self.occGrid = OccGrid(0.3, 18)
 
         # ==== metadata ====
         self.valid = False
@@ -104,4 +104,4 @@ class State:
         # csv file handle?
 
         #EKF
-        self.P = np.eye(3)*0.001
+        self.P = np.eye(3)*0.00001

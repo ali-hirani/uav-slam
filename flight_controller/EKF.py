@@ -13,9 +13,9 @@ def landMarkIntersect(x,y,theta,p1x,p1y,p2x,p2y, range):
     # print(y+range*np.sin(theta))
 
     #how long past the ends of the line can we be and still have this count
-    lengthThresh = 0.2
+    lengthThresh = 0.1
     #how far off the surface of the line can we be and still have this count
-    depthThresh = 0.1
+    depthThresh = 0.05
     k = (y + (p1x-x) * np.tan(theta) - p1y)/(p2y-p1y-(p2x-p1x)*np.tan(theta))
     #note this is biased by line length fuck it
     if k < 0-lengthThresh or k > 1+lengthThresh:
@@ -31,14 +31,14 @@ def landMarkIntersect(x,y,theta,p1x,p1y,p2x,p2y, range):
 def processData(curState):
     #state = ...
     curState = efkPredict(curState)
-    curState = efkUpdate(curState)
+    # curState = efkUpdate(curState)
 
     return curState
 
 def efkPredict(state):
-    dx = state.vx * state.dt
+    dx = 0.1*state.vx * state.dt
     #print("dx", dx)
-    dy = state.vy * state.dt
+    dy = 0.1* state.vy * state.dt
     #print("dy", dy)
     state.x = state.x + dx * math.cos(state.yaw) - dy * math.sin(state.yaw)
     #print("x", x)
@@ -51,7 +51,7 @@ def efkPredict(state):
     E = np.ones((1,3))
     ET = np.ones((3,1))
     # model disturbance variance
-    r = 0.01
+    r = 0.001
     R = np.eye(3)*r
     state.P = F*state.P*FT + E*R*ET
     #print(state.P)
@@ -85,7 +85,7 @@ def efkUpdate(state):
 
                         HJ = np.array(HJ).astype(np.float64)
                         print(HJ)
-                        Q = np.array([0.001]).astype(np.float64)
+                        Q = np.array([0.00001]).astype(np.float64)
                         thing = np.linalg.inv((HJ*state.P*np.transpose(HJ)  + Q))
                         #print(thing)
                         K = state.P*np.transpose(HJ)* thing
@@ -98,8 +98,9 @@ def efkUpdate(state):
                         print(state.depths[i])
                         thing2 = K * (state.depths[i]- H)
                         print(thing2)
-                        state.x = state.x + thing2[0][0]
-                        state.y = state.y +thing2[1][1]
+                        state.x = state.x + 0.001* thing2[0][0]
+                        state.y = state.y + 0.001* thing2[1][1]
+                        state.yaw = state.yaw + 0.001* thing2[2][2]
     except Exception as e:
         print("fuck yourself: " + str(e))
 

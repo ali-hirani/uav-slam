@@ -26,7 +26,8 @@ drone = None
 counter = 0
 globalState = None
 ReadFromFile = True
-ReadFileName = "/Users/ali/4A/FYDP/uav-slam/flight_controller/data/test_run1552638067.09.csv"
+# ReadFileName = "D:\\School\\fydp\\forward-ash_hall.csv"
+ReadFileName = "D:\\School\\fydp\\blessed_rotation_2_rch_205.csv"
 ndc = -1
 sockPi = None
 
@@ -41,7 +42,7 @@ def connect():
     # Connect to pi
     sockPi = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sockPi.connect((TCP_IP, TCP_PORT))
-    
+
     drone = pythonFlight.initDrone(drone)
 
     lidarThread = Thread(target = getLidar)
@@ -75,8 +76,8 @@ def decode_data():
 def initState():
     global globalState
     s1 = state.Sensor([0.,0.], 0)
-    s2 = state.Sensor([0.,0.], math.pi/2)
-    s3 = state.Sensor([0.,0.], -math.pi/2)
+    s2 = state.Sensor([0.,0.], -math.pi/2)
+    s3 = state.Sensor([0.,0.], math.pi/2)
     globalState = state.State([s1,s2,s3])
     globalState.busy = False
 
@@ -153,7 +154,7 @@ def getLidar():
 
 def takeoff():
     global globalState
-    
+
     print("takeoff begin")
     globalState.busy = True
     print "doing trim + self rotation"
@@ -172,9 +173,9 @@ def takeoff():
 
 def move_drone(direction,speed, period):
     global globalState
-    
+
     globalState.busy = True
-    
+
     if direction == "front":
         print "moving forward"
         drone.moveForward(speed)
@@ -205,7 +206,7 @@ def move_drone(direction,speed, period):
         time.sleep(2)
 
     globalState.busy = False
- 
+
 
 #do 360 deg rotation in 8 steps
 def do_rotation():
@@ -220,12 +221,12 @@ def do_rotation():
         drone.hover()
         time.sleep(2)
         counter += 1
-    drone.land() 
+    drone.land()
     globalState.busy = False
 
 def do_square_angled():
     global globalState
-    
+
     globalState.busy = True
     counter = 1
     while counter <= 4:
@@ -275,6 +276,7 @@ plt.figure(1) # create a plot
 
 while True:
     try:
+
         if ReadFromFile:
             try:
                 raw = reader.next()
@@ -285,7 +287,7 @@ while True:
             globalState.time = float(raw[1])
             globalState.vx = float(raw[2])
             globalState.vy = float(raw[3])
-            globalState.yaw = float(raw[4])
+            globalState.yaw = -float(raw[4])
             globalState.depths[0] = float(raw[5])
             globalState.depths[1] = float(raw[6])
             globalState.depths[2] = float(raw[7])
@@ -320,7 +322,7 @@ while True:
             globalState.vx = float(velocity[0]) / 100 # convert to m/s
             globalState.vy = float(velocity[1]) / 100 # convert to m/s
             globalState.yaw = float(angles[2]) *  (math.pi / 180)
-        
+
         # print("dt" + str(globalState.dt))
         # print("time" + str(globalState.time))
         # print("vx" + str(globalState.vx))
@@ -332,6 +334,9 @@ while True:
         writeData()
         # only count on good data
         counter += 1
+        # if counter < 2000 or counter > 4400:
+        if counter < 1000:
+            continue
 
         # update our idea of where we are and whats around us
         globalState = EKF.processData(globalState)
@@ -341,7 +346,7 @@ while True:
         # print("Global Y: ", globalState.y)
         x.append(globalState.x)
         y.append(globalState.y)
-        if counter%200 == 0:
+        if counter%100 == 0:
             startx.append(globalState.x)
             starty.append(globalState.y)
             dirx.append(math.cos(globalState.yaw)*0.5)
@@ -375,12 +380,12 @@ while True:
 
         img = np.array(globalState.occGrid.grid * 255, dtype = np.uint8)
         #cv2.imshow("image1", img);
-        ret,thresh1 = cv2.threshold(img,220,255,cv2.THRESH_BINARY)
+        ret,thresh1 = cv2.threshold(img,210,255,cv2.THRESH_BINARY)
 
         ret,thresh2 = cv2.threshold(img,255,255,cv2.THRESH_BINARY)
-        minLineLength = 3
-        maxLineGap = 2
-        lines = cv2.HoughLinesP(thresh1,1,np.pi/180,10, minLineLength=minLineLength, maxLineGap = maxLineGap)
+        minLineLength = 2
+        maxLineGap = 3
+        lines = cv2.HoughLinesP(thresh1,3,np.pi/180,23, minLineLength=minLineLength, maxLineGap = maxLineGap)
 
         linesToAdd = []
         if type(lines) is np.ndarray:
@@ -396,34 +401,48 @@ while True:
                 cv2.line(thresh2,(x1,y1),(x2,y2),(255,0,0),1)
         globalState.lines = np.array(linesToAdd)
 
-        # if counter %200 == 0:
-            # plt.clf()
+        if counter %100 == 0:
+            plt.clf()
             #plot1
-            # plt.subplot(221)
-            # plt.plot(x,  y, label="posX")
-            # for i in range(0, len(startx)):
-            #     plt.arrow(startx[i], starty[i], dirx[i], diry[i],  head_width=0.05, head_length=0.01, fc='k', ec='k', width=0.0001)
-            # print(len(lidar1x))
-            # plt.scatter(lidar1x,  lidar1y, color="red", s = 0.01)
-            # plt.scatter(lidar2x,  lidar2y, color="green", s = 0.01)
-            # plt.scatter(lidar3x,  lidar3y, color="blue", s = 0.01)
-            # for line in globalState.lines:
-            #     plt.plot([line[0],line[2]], [line[1], line[3]])
-            # plt.grid()
+            plt.subplot(221)
+            #plt.xlim(-0,15)
+            #plt.ylim(-5,10)
+            plt.plot(x,  y, label="posX")
+            for i in range(0, len(startx)):
+                plt.arrow(startx[i], starty[i], dirx[i], diry[i],  head_width=0.05, head_length=0.01, fc='k', ec='k', width=0.0001)
+            print(len(lidar1x))
+            plt.title("Drone Position, Direction and Lidar Measurments (full history)")
+            plt.ylabel('meters')
+            plt.xlabel('meters')
+            plt.scatter(lidar1x,  lidar1y, color="red", s = 0.01)
+            plt.scatter(lidar2x,  lidar2y, color="green", s = 0.01)
+            plt.scatter(lidar3x,  lidar3y, color="blue", s = 0.01)
+            for line in globalState.lines:
+                plt.plot([line[0],line[2]], [line[1], line[3]])
+            plt.grid()
 
-            # #plt2
-            # plt.subplot(222)
-            # plt.imshow(globalState.occGrid.grid, 'Greys')
+            #plt2
+            plt.subplot(222)
+            plt.title("Occupancy Grid")
+            plt.ylabel('30\'s of  cm')
+            plt.xlabel('30\'s of  cm')
+            plt.imshow(globalState.occGrid.grid.T, 'Greys', origin='lower')
 
-            # #plt3
-            # plt.subplot(223)
-            # plt.imshow(thresh1)
-            # #plt4
-            # plt.subplot(224)
-            # plt.imshow(thresh2)
+            #plt3
+            plt.subplot(223)
+            plt.title("Occupancy Grid Thresholded")
+            plt.ylabel('30\'s of  cm')
+            plt.xlabel('30\'s of  cm')
+            plt.imshow(thresh1.T, origin='lower')
+            #plt4
+            plt.subplot(224)
+            plt.title("Landmark Observation")
+            plt.ylabel('30\'s of  cm')
+            plt.xlabel('30\'s of  cm')
+            plt.imshow(thresh2.T, origin='lower')
 
-            # plt.pause(0.1)
-        
+            plt.pause(0.5)
+
         #if we should then issue the command
         # print("issueCommand", counter)
         if command != -1:
@@ -436,17 +455,7 @@ while True:
         print(exc_type, fname, exc_tb.tb_lineno)
         pass
 
-fig, axarr = plt.subplots(1, sharex=True)
-axarr.plot(x,  y, label="posX")
-for i in range(0, len(dirx)):
-    axarr.arrow(startx[i], starty[i], dirx[i], diry[i],  head_width=0.005, head_length=0.01, fc='k', ec='k', width=0.0001)
-axarr.plot(lidar1x,  lidar1y, color="red")
-# axarr.plot(lidar2x,  lidar2y, color="red")
-# axarr.plot(lidar3x,  lidar3y, color="red")
-
 plt.show()
-
-# plt.show()
 # plt.ion() # enable real-time plotting
 # plt.figure(1) # create a plot
 # for j in range(0, len(dirx)):
